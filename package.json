@@ -9,9 +9,16 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "@types/geoip-lite": "^1.4.4",
+    "@types/uuid": "^10.0.0",
+    "geoip-lite": "^1.4.10",
     "next": "16.0.3",
+    "next-auth": "^4.24.13",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "react-pdf": "^10.2.0",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "^20",

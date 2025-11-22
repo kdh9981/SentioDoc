@@ -196,15 +196,15 @@ export default function Dashboard() {
             {/* Stats Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
                 <div className="card" style={{ textAlign: 'center', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Total Views</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '4px' }}>Total Views</div>
                     <div style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary)' }}>{stats.totalViews}</div>
                 </div>
                 <div className="card" style={{ textAlign: 'center', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Unique Viewers</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '4px' }}>Unique Viewers</div>
                     <div style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary)' }}>{stats.uniqueViewers}</div>
                 </div>
                 <div className="card" style={{ padding: '20px' }}>
-                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px', textAlign: 'center' }}>Country Ranking</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '12px', textAlign: 'center' }}>Country Ranking</div>
                     {stats.countryRanking && stats.countryRanking.length > 0 ? (
                         <div style={{
                             overflowX: 'auto',

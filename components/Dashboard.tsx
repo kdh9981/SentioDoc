@@ -166,7 +166,7 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="container animate-fade-in" style={{ padding: '60px 20px' }}>
+        <div className="container animate-fade-in" style={{ padding: '40px 20px' }}>
             <header style={{ marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 style={{ fontSize: '32px', fontWeight: '700', letterSpacing: '-0.02em' }}>Document Viewer</h1>
@@ -194,7 +194,7 @@ export default function Dashboard() {
             </header>
 
             {/* Stats Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '16px', marginBottom: '32px' }}>
                 <div className="card" style={{ textAlign: 'center', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <div style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '4px' }}>Total Views</div>
                     <div style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary)' }}>{stats.totalViews}</div>
@@ -271,7 +271,7 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 500px), 1fr))', gap: '40px', alignItems: 'start' }}>
                 {/* Left Column: Upload & Files */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
                     <div className="card">

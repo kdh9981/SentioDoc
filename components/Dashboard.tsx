@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { signOut, useSession } from "next-auth/react";
 import FileUpload from './FileUpload';
+import ThemeToggle from './ThemeToggle';
 
 interface FileRecord {
     id: string;
@@ -183,6 +184,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                     )}
+                    <ThemeToggle />
                     <button
                         onClick={() => signOut()}
                         className="btn btn-secondary"

@@ -14,7 +14,8 @@ export async function GET() {
             files: files?.map(f => ({
                 ...f,
                 createdAt: f.created_at, // Map snake_case to camelCase
-                deletedAt: f.deleted_at
+                deletedAt: f.deleted_at,
+                externalUrl: f.external_url
             }))
         });
     } catch (error) {

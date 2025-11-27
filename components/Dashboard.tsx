@@ -12,6 +12,8 @@ interface FileRecord {
     createdAt: string;
     slug?: string;
     deletedAt?: string;
+    type?: 'file' | 'url';
+    externalUrl?: string;
 }
 
 interface ActivityLog {
@@ -315,6 +317,9 @@ export default function Dashboard() {
                                                         alignItems: 'center',
                                                         gap: '8px'
                                                     }} title={file.name}>
+                                                        <span style={{ flexShrink: 0, fontSize: '18px' }}>
+                                                            {file.type === 'url' ? '🔗' : '📄'}
+                                                        </span>
                                                         {file.name}
                                                         {file.deletedAt && (
                                                             <span style={{
@@ -328,6 +333,11 @@ export default function Dashboard() {
                                                         )}
                                                     </div>
                                                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                                                        {file.type === 'url' && file.externalUrl && (
+                                                            <div style={{ marginBottom: '4px', fontStyle: 'italic' }}>
+                                                                → {file.externalUrl.length > 50 ? file.externalUrl.substring(0, 50) + '...' : file.externalUrl}
+                                                            </div>
+                                                        )}
                                                         {file.views} views • {new Date(file.createdAt).toLocaleDateString()}
                                                     </div>
                                                 </td>

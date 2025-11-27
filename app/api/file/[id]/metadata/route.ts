@@ -13,7 +13,7 @@ export async function GET(
 
         let query = supabaseAdmin
             .from('files')
-            .select('id, name, mime_type, size, slug');
+            .select('id, name, mime_type, size, slug, type, external_url');
 
         if (isUUID) {
             query = query.eq('id', paramId);

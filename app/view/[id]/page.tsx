@@ -14,6 +14,8 @@ interface FileMetadata {
     name: string;
     mimeType: string;
     size: number;
+    type?: 'file' | 'url';
+    external_url?: string;
 }
 
 export default function ViewerPage({ params }: { params: Promise<{ id: string }> }) {
@@ -34,7 +36,9 @@ export default function ViewerPage({ params }: { params: Promise<{ id: string }>
                         id: data.id,
                         name: data.name,
                         mimeType: data.mime_type, // Convert snake_case to camelCase
-                        size: data.size
+                        size: data.size,
+                        type: data.type || 'file',
+                        external_url: data.external_url
                     });
                 } else {
                     setError('File not found');
@@ -48,6 +52,14 @@ export default function ViewerPage({ params }: { params: Promise<{ id: string }>
 
         fetchMetadata();
     }, [id]);
+
+    // Handle external URL redirect after viewer gate
+    useEffect(() => {
+        if (authorized && metadata?.type === 'url' && metadata?.external_url) {
+            // Redirect to external URL
+            window.location.href = metadata.external_url;
+        }
+    }, [authorized, metadata]);
 
     if (loading) {
         return (
@@ -73,6 +85,24 @@ export default function ViewerPage({ params }: { params: Promise<{ id: string }>
                 fileName={metadata.name}
                 onAccessGranted={() => setAuthorized(true)}
             />
+        );
+    }
+
+    // Show redirecting message for URLs
+    if (metadata.type === 'url') {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '16px' }}>
+                <div style={{
+                    width: '40px',
+                    height: '40px',
+                    border: '3px solid var(--surface-hover)',
+                    borderTopColor: 'var(--primary)',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                }} />
+                <p style={{ color: 'var(--text-secondary)' }}>Redirecting to {metadata.name}...</p>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
         );
     }
 

@@ -11,23 +11,138 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 interface FileViewerProps {
     fileId: string;
     mimeType: string;
+    fileName?: string;
 }
 
-export default function FileViewer({ fileId, mimeType }: FileViewerProps) {
+type ViewerType = 'pdf' | 'image' | 'video' | 'audio' | 'text' | 'code' | 'csv' | 'office' | 'unsupported';
+
+function detectViewerType(mimeType: string, fileName: string = ''): ViewerType {
+    // PDF
+    if (mimeType === 'application/pdf') return 'pdf';
+
+    // Images
+    if (mimeType.startsWith('image/')) return 'image';
+
+    // Video
+    if (mimeType.startsWith('video/')) return 'video';
+
+    // Audio
+    if (mimeType.startsWith('audio/')) return 'audio';
+
+    // CSV
+    if (mimeType === 'text/csv') return 'csv';
+
+    // Office Documents
+    const officeTypes = [
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    ];
+    if (officeTypes.includes(mimeType)) return 'office';
+
+    // Code files (by extension)
+    const codeExtensions = ['.js', '.ts', '.tsx', '.jsx', '.py', '.java', '.cpp', '.c', '.go', '.rs', '.html', '.css', '.json', '.xml', '.yaml', '.yml', '.rb', '.php', '.swift', '.kt', '.sh'];
+    if (codeExtensions.some(ext => fileName.toLowerCase().endsWith(ext))) return 'code';
+
+    // Plain text
+    if (mimeType.startsWith('text/')) return 'text';
+
+    return 'unsupported';
+}
+
+function getLanguageFromFilename(fileName: string): string {
+    const ext = fileName.toLowerCase().split('.').pop() || '';
+    const languageMap: Record<string, string> = {
+        'js': 'javascript',
+        'jsx': 'javascript',
+        'ts': 'typescript',
+        'tsx': 'typescript',
+        'py': 'python',
+        'rb': 'ruby',
+        'java': 'java',
+        'cpp': 'cpp',
+        'c': 'c',
+        'go': 'go',
+        'rs': 'rust',
+        'php': 'php',
+        'swift': 'swift',
+        'kt': 'kotlin',
+        'html': 'html',
+        'css': 'css',
+        'json': 'json',
+        'xml': 'xml',
+        'yaml': 'yaml',
+        'yml': 'yaml',
+        'sh': 'bash',
+        'md': 'markdown',
+    };
+    return languageMap[ext] || 'javascript';
+}
+
+export default function FileViewer({ fileId, mimeType, fileName = '' }: FileViewerProps) {
     const fileUrl = `/api/file/${fileId}`;
-    const isImage = mimeType.startsWith('image/');
+    const viewerType = detectViewerType(mimeType, fileName);
+
+    // PDF state
     const [numPages, setNumPages] = useState<number>(0);
     const [pageNumber, setPageNumber] = useState<number>(1);
     const [pageStartTime, setPageStartTime] = useState<number>(Date.now());
     const [viewerEmail, setViewerEmail] = useState<string | null>(null);
 
-    // Retrieve viewer email from localStorage (set during gate access)
+    // Text/Code state
+    const [textContent, setTextContent] = useState<string>('');
+    const [highlightedCode, setHighlightedCode] = useState<string>('');
+
+    // CSV state
+    const [csvData, setCsvData] = useState<string[][]>([]);
+
+    // Retrieve viewer email from localStorage
     useEffect(() => {
         const storedEmail = localStorage.getItem(`viewer_email_${fileId}`);
         if (storedEmail) {
             setViewerEmail(storedEmail);
         }
     }, [fileId]);
+
+    // Load text/code content
+    useEffect(() => {
+        if (viewerType === 'text' || viewerType === 'code') {
+            fetch(fileUrl)
+                .then(res => res.text())
+                .then(text => {
+                    setTextContent(text);
+                    if (viewerType === 'code') {
+                        // Load Prism.js dynamically
+                        import('prismjs').then(Prism => {
+                            const language = getLanguageFromFilename(fileName);
+                            // Load language
+                            if (language !== 'javascript') {
+                                import(`prismjs/components/prism-${language}`).catch(() => { });
+                            }
+                            const highlighted = Prism.highlight(text, Prism.languages[language] || Prism.languages.javascript, language);
+                            setHighlightedCode(highlighted);
+                        });
+                    }
+                });
+        }
+    }, [viewerType, fileUrl, fileName]);
+
+    // Load CSV content
+    useEffect(() => {
+        if (viewerType === 'csv') {
+            fetch(fileUrl)
+                .then(res => res.text())
+                .then(text => {
+                    import('papaparse').then(Papa => {
+                        const result = Papa.parse(text);
+                        setCsvData(result.data as string[][]);
+                    });
+                });
+        }
+    }, [viewerType, fileUrl]);
 
     const trackPageDuration = async (page: number, duration: number) => {
         if (!viewerEmail) return;
@@ -39,7 +154,7 @@ export default function FileViewer({ fileId, mimeType }: FileViewerProps) {
                     fileId,
                     viewerEmail,
                     pageNumber: page,
-                    durationSeconds: duration / 1000 // Convert to seconds
+                    durationSeconds: duration / 1000
                 }),
             });
         } catch (error) {
@@ -47,109 +162,304 @@ export default function FileViewer({ fileId, mimeType }: FileViewerProps) {
         }
     };
 
-    // Track when page changes
+    // PDF page tracking
     useEffect(() => {
-        // When page changes, track the PREVIOUS page's duration
-        const currentTime = Date.now();
-        const duration = currentTime - pageStartTime;
+        if (viewerType !== 'pdf' || !viewerEmail) return;
 
-        // We need to track the *previous* page number, but state update happens after.
-        // So we'll use a ref or just track "on unmount" of the effect.
-        // Actually, simpler: when pageNumber changes, we log the duration for the *previous* render cycle.
-        // But we don't have the "previous" page number easily available without a ref.
-
-        // Let's use a ref to store the current page number so we can access it in the cleanup/next effect
-    }, [pageNumber]); // This logic is tricky with just useEffect deps.
-
-    // Better approach: Use a ref to track the active page and start time
-    const activePageRef = useRef<number>(1);
-    const startTimeRef = useRef<number>(Date.now());
-
-    useEffect(() => {
-        activePageRef.current = pageNumber;
-        startTimeRef.current = Date.now();
+        setPageStartTime(Date.now());
 
         return () => {
-            // Cleanup: calculate duration and send
-            const duration = Date.now() - startTimeRef.current;
-            if (duration > 500) { // Only track if > 0.5s
-                trackPageDuration(activePageRef.current, duration);
+            const duration = Date.now() - pageStartTime;
+            if (duration > 1000) {
+                trackPageDuration(pageNumber, duration);
             }
         };
-    }, [pageNumber, viewerEmail]); // Re-run when page changes. Cleanup runs first.
+    }, [pageNumber, viewerEmail]);
 
-    function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+    const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
         setNumPages(numPages);
-    }
+    };
 
-    const changePage = (offset: number) => {
-        setPageNumber(prevPageNumber => {
-            const newPage = prevPageNumber + offset;
-            return Math.max(1, Math.min(newPage, numPages));
-        });
-    }
+    const nextPage = () => {
+        if (pageNumber < numPages) {
+            setPageNumber(prev => prev + 1);
+        }
+    };
 
-    const previousPage = () => changePage(-1);
-    const nextPage = () => changePage(1);
+    const prevPage = () => {
+        if (pageNumber > 1) {
+            setPageNumber(prev => prev - 1);
+        }
+    };
 
-    // Keyboard navigation
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(textContent);
+    };
+
+    // Keyboard navigation for PDF
     useEffect(() => {
+        if (viewerType !== 'pdf') return;
+
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'ArrowLeft') {
-                previousPage();
+                prevPage();
             } else if (event.key === 'ArrowRight') {
                 nextPage();
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [numPages]); // Re-bind when numPages changes (though logic inside uses functional update, good practice)
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [numPages]);
 
-    return (
-        <div style={{
-            height: '100vh',
+    // Common header
+    const Header = () => (
+        <header style={{
+            padding: '16px 24px',
+            background: 'transparent',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10,
             display: 'flex',
-            flexDirection: 'column',
-            background: '#0a0a0a',
-            userSelect: 'none' // Prevent text selection for "presentation" feel
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            pointerEvents: 'none'
         }}>
-            {/* Minimal Header */}
-            <header style={{
-                padding: '16px 24px',
-                background: 'transparent', // Transparent header for presentation mode
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                zIndex: 10,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                pointerEvents: 'none' // Let clicks pass through to viewer
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', pointerEvents: 'auto' }}>
-                    <div style={{ fontSize: '20px' }}>📄</div>
-                    <span style={{ fontWeight: '600', fontSize: '16px', color: 'rgba(255,255,255,0.7)' }}>Document Viewer</span>
-                </div>
-                {/* Download button REMOVED */}
-            </header>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', pointerEvents: 'auto' }}>
+                <div style={{ fontSize: '20px' }}>📄</div>
+                <span style={{ fontWeight: '600', fontSize: '16px', color: 'rgba(255,255,255,0.7)' }}>Document Viewer</span>
+            </div>
+        </header>
+    );
 
-            <div style={{
-                flex: 1,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                position: 'relative',
-                overflow: 'hidden'
-            }}>
+    // VIDEO VIEWER
+    if (viewerType === 'video') {
+        return (
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
+                <Header />
+                <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '60px 20px' }}>
+                    <video controls style={{ maxWidth: '100%', maxHeight: '90vh', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+                        <source src={fileUrl} type={mimeType} />
+                        Your browser doesn't support video playback.
+                    </video>
+                </div>
+            </div>
+        );
+    }
+
+    // AUDIO VIEWER
+    if (viewerType === 'audio') {
+        return (
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
+                <Header />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '60px 20px', gap: '32px' }}>
+                    <div style={{ fontSize: '64px' }}>🎵</div>
+                    <audio controls style={{ width: '100%', maxWidth: '600px' }}>
+                        <source src={fileUrl} type={mimeType} />
+                        Your browser doesn't support audio playback.
+                    </audio>
+                    <p style={{ color: 'var(--text-secondary)' }}>{fileName}</p>
+                </div>
+            </div>
+        );
+    }
+
+    // TEXT VIEWER
+    if (viewerType === 'text') {
+        return (
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
+                <Header />
+                <div style={{ flex: 1, overflow: 'auto', padding: '80px 40px 40px' }}>
+                    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h2 style={{ color: 'white' }}>{fileName}</h2>
+                            <button onClick={copyToClipboard} className="btn btn-secondary" style={{ fontSize: '12px' }}>
+                                Copy Text
+                            </button>
+                        </div>
+                        <pre style={{
+                            background: 'var(--surface)',
+                            padding: '24px',
+                            borderRadius: '8px',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                            color: 'var(--text-primary)',
+                            fontSize: '14px',
+                            lineHeight: '1.6'
+                        }}>
+                            {textContent}
+                        </pre>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // CODE VIEWER
+    if (viewerType === 'code') {
+        return (
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
+                <Header />
+                <div style={{ flex: 1, overflow: 'auto', padding: '80px 40px 40px' }}>
+                    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h2 style={{ color: 'white' }}>{fileName}</h2>
+                            <button onClick={copyToClipboard} className="btn btn-secondary" style={{ fontSize: '12px' }}>
+                                Copy Code
+                            </button>
+                        </div>
+                        <pre style={{
+                            background: '#1e1e1e',
+                            padding: '24px',
+                            borderRadius: '8px',
+                            overflow: 'auto',
+                            fontSize: '14px',
+                            lineHeight: '1.6'
+                        }}>
+                            <code
+                                className={`language-${getLanguageFromFilename(fileName)}`}
+                                dangerouslySetInnerHTML={{ __html: highlightedCode || textContent }}
+                                style={{ color: '#d4d4d4' }}
+                            />
+                        </pre>
+                    </div>
+                </div>
+                <style jsx global>{`
+                    @import url('https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css');
+                `}</style>
+            </div>
+        );
+    }
+
+    // CSV VIEWER
+    if (viewerType === 'csv') {
+        return (
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
+                <Header />
+                <div style={{ flex: 1, overflow: 'auto', padding: '80px 40px 40px' }}>
+                    <div style={{ maxWidth: '100%', margin: '0 auto' }}>
+                        <h2 style={{ color: 'white', marginBottom: '16px' }}>{fileName}</h2>
+                        <div style={{ overflowX: 'auto', background: 'var(--surface)', borderRadius: '8px', padding: '16px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                {csvData.length > 0 && (
+                                    <>
+                                        <thead>
+                                            <tr>
+                                                {csvData[0].map((header, i) => (
+                                                    <th key={i} style={{
+                                                        padding: '12px',
+                                                        textAlign: 'left',
+                                                        borderBottom: '2px solid var(--border)',
+                                                        color: 'var(--text-primary)',
+                                                        fontWeight: '600',
+                                                        whiteSpace: 'nowrap'
+                                                    }}>
+                                                        {header}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {csvData.slice(1).map((row, rowIndex) => (
+                                                <tr key={rowIndex}>
+                                                    {row.map((cell, cellIndex) => (
+                                                        <td key={cellIndex} style={{
+                                                            padding: '12px',
+                                                            borderBottom: '1px solid var(--border)',
+                                                            color: 'var(--text-secondary)'
+                                                        }}>
+                                                            {cell}
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </>
+                                )}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // OFFICE VIEWER
+    if (viewerType === 'office') {
+        const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
+
+        return (
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
+                <Header />
+                <div style={{ flex: 1, padding: '60px 20px 20px' }}>
+                    <iframe
+                        src={officeViewerUrl}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            border: 'none',
+                            borderRadius: '8px'
+                        }}
+                        title="Office Document Viewer"
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    // UNSUPPORTED VIEWER
+    if (viewerType === 'unsupported') {
+        return (
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
+                <Header />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '60px 20px', gap: '24px' }}>
+                    <div style={{ fontSize: '64px' }}>📦</div>
+                    <h2 style={{ color: 'white' }}>Cannot Preview This File</h2>
+                    <p style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>
+                        File type: {mimeType}<br />
+                        This file type is not supported for preview.
+                    </p>
+                    <a href={fileUrl} download className="btn btn-primary">
+                        Download File
+                    </a>
+                </div>
+            </div>
+        );
+    }
+
+    // IMAGE VIEWER
+    if (viewerType === 'image') {
+        return (
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a', userSelect: 'none' }}>
+                <Header />
+                <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
+                    <img
+                        src={fileUrl}
+                        alt="Document"
+                        style={{
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                            borderRadius: '4px'
+                        }}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    // PDF VIEWER (original implementation)
+    return (
+        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a', userSelect: 'none' }}>
+            <Header />
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
                 {/* Navigation Arrows */}
-                {!isImage && numPages > 1 && (
+                {numPages > 1 && (
                     <>
                         <button
-                            onClick={previousPage}
+                            onClick={prevPage}
                             disabled={pageNumber <= 1}
                             style={{
                                 position: 'absolute',
@@ -197,57 +507,39 @@ export default function FileViewer({ fileId, mimeType }: FileViewerProps) {
                     </>
                 )}
 
-                {isImage ? (
-                    <img
-                        src={fileUrl}
-                        alt="Document"
-                        style={{
-                            maxWidth: '100%',
-                            maxHeight: '100%',
-                            boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-                            borderRadius: '4px'
-                        }}
-                    />
-                ) : (
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: '100%'
-                    }}>
-                        <Document
-                            file={fileUrl}
-                            onLoadSuccess={onDocumentLoadSuccess}
-                            loading={<div style={{ color: 'white' }}>Loading PDF...</div>}
-                            error={<div style={{ color: 'red' }}>Failed to load PDF.</div>}
-                        >
-                            <Page
-                                pageNumber={pageNumber}
-                                renderTextLayer={false}
-                                renderAnnotationLayer={false}
-                                height={window.innerHeight * 0.9} // Fit to height
-                                className="pdf-page"
-                            />
-                        </Document>
-                    </div>
-                )}
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                    <Document
+                        file={fileUrl}
+                        onLoadSuccess={onDocumentLoadSuccess}
+                        loading={<div style={{ color: 'white' }}>Loading PDF...</div>}
+                        error={<div style={{ color: 'red' }}>Failed to load PDF.</div>}
+                    >
+                        <Page
+                            pageNumber={pageNumber}
+                            renderTextLayer={false}
+                            renderAnnotationLayer={false}
+                            height={window.innerHeight * 0.9}
+                            className="pdf-page"
+                        />
+                    </Document>
+                </div>
             </div>
 
-            {/* Page Indicator */}
-            {!isImage && (
+            {/* Page indicator */}
+            {numPages > 0 && (
                 <div style={{
                     position: 'absolute',
                     bottom: '20px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    background: 'rgba(0,0,0,0.5)',
+                    background: 'rgba(0,0,0,0.7)',
                     padding: '8px 16px',
                     borderRadius: '20px',
                     color: 'white',
                     fontSize: '14px',
-                    zIndex: 20
+                    pointerEvents: 'none'
                 }}>
-                    Page {pageNumber} of {numPages || '--'}
+                    {pageNumber} / {numPages}
                 </div>
             )}
 
@@ -255,6 +547,7 @@ export default function FileViewer({ fileId, mimeType }: FileViewerProps) {
                 .nav-arrow:hover {
                     background: rgba(255,255,255,0.2) !important;
                 }
+                
                 .pdf-page canvas {
                     box-shadow: 0 20px 50px rgba(0,0,0,0.5);
                     border-radius: 4px;

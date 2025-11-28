@@ -106,5 +106,5 @@ export default function ViewerPage({ params }: { params: Promise<{ id: string }>
         );
     }
 
-    return <FileViewer fileId={metadata.id} mimeType={metadata.mimeType} />;
+    return <FileViewer fileId={metadata.id} mimeType={metadata.mimeType} fileName={metadata.name} />;
 }

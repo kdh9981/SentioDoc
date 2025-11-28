@@ -193,7 +193,7 @@ export default function FileUpload({ onUploadSuccess }: { onUploadSuccess: () =>
                                 {isDragging ? 'Drop file here' : 'Click or drag file to upload'}
                             </p>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                                Supports PDF, Images, and Text files
+                                Supports PDF, Office docs, images, video, audio, code, CSV, and more
                             </p>
                         </div>
                     )}

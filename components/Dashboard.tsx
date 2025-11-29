@@ -279,7 +279,10 @@ export default function Dashboard() {
                 {/* Left Column: Upload & Files */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
                     <div className="card">
-                        <h2 style={{ marginBottom: '24px', fontSize: '20px', fontWeight: '600' }}>Upload File</h2>
+                        <h2 style={{ marginBottom: '8px', fontSize: '20px', fontWeight: '600' }}>Create Link</h2>
+                        <p style={{ marginBottom: '24px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+                            Track views on documents or external links (YouTube, X, websites, and more)
+                        </p>
                         <FileUpload onUploadSuccess={fetchDashboardData} />
                     </div>
 

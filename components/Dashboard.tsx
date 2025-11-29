@@ -101,19 +101,28 @@ export default function Dashboard() {
         }
 
         setSlugAvailability('checking');
+        console.log('[FRONTEND] Checking slug:', customSlug);
 
         const timeoutId = setTimeout(async () => {
             try {
-                const res = await fetch(`/api/slug/check?slug=${encodeURIComponent(customSlug)}`);
+                const url = `/api/slug/check?slug=${encodeURIComponent(customSlug)}`;
+                console.log('[FRONTEND] Fetching:', url);
+
+                const res = await fetch(url);
                 const data = await res.json();
 
+                console.log('[FRONTEND] Response:', { status: res.status, ok: res.ok, data });
+
                 if (res.ok) {
-                    setSlugAvailability(data.available ? 'available' : 'taken');
+                    const newAvailability = data.available ? 'available' : 'taken';
+                    console.log('[FRONTEND] Setting availability to:', newAvailability);
+                    setSlugAvailability(newAvailability);
                 } else {
+                    console.log('[FRONTEND] API error, setting to null');
                     setSlugAvailability(null);
                 }
             } catch (error) {
-                console.error('Failed to check slug availability:', error);
+                console.error('[FRONTEND] Failed to check slug availability:', error);
                 setSlugAvailability(null);
             }
         }, 500); // 500ms debounce

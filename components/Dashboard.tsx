@@ -84,12 +84,42 @@ export default function Dashboard() {
     const [createLinkFile, setCreateLinkFile] = useState<FileRecord | null>(null);
     const [customSlug, setCustomSlug] = useState('');
     const [isSavingSlug, setIsSavingSlug] = useState(false);
+    const [slugAvailability, setSlugAvailability] = useState<'checking' | 'available' | 'taken' | null>(null);
 
     const handleCreateLink = (file: FileRecord) => {
         setCreateLinkFile(file);
         setCustomSlug('');
+        setSlugAvailability(null);
         setShowCreateLinkModal(true);
     };
+
+    // Check slug availability with debounce
+    useEffect(() => {
+        if (!customSlug) {
+            setSlugAvailability(null);
+            return;
+        }
+
+        setSlugAvailability('checking');
+
+        const timeoutId = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/slug/check?slug=${encodeURIComponent(customSlug)}`);
+                const data = await res.json();
+
+                if (res.ok) {
+                    setSlugAvailability(data.available ? 'available' : 'taken');
+                } else {
+                    setSlugAvailability(null);
+                }
+            } catch (error) {
+                console.error('Failed to check slug availability:', error);
+                setSlugAvailability(null);
+            }
+        }, 500); // 500ms debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [customSlug]);
 
     const saveSlug = async () => {
         if (!createLinkFile || !customSlug) return;
@@ -765,10 +795,15 @@ export default function Dashboard() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 background: 'var(--background)',
-                                border: '1px solid var(--border)',
+                                border: slugAvailability === 'taken'
+                                    ? '2px solid #ef4444'
+                                    : slugAvailability === 'available'
+                                    ? '2px solid #22c55e'
+                                    : '1px solid var(--border)',
                                 borderRadius: '8px',
                                 padding: '0 12px',
-                                height: '48px'
+                                height: '48px',
+                                transition: 'border-color 0.2s'
                             }}>
                                 <span style={{ color: 'var(--text-secondary)', marginRight: '4px', fontSize: '14px' }}>
                                     {window.location.origin}/view/
@@ -788,10 +823,36 @@ export default function Dashboard() {
                                     }}
                                     autoFocus
                                 />
+                                {slugAvailability === 'checking' && (
+                                    <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>⏳</span>
+                                )}
+                                {slugAvailability === 'available' && (
+                                    <span style={{ fontSize: '14px', color: '#22c55e' }}>✓</span>
+                                )}
+                                {slugAvailability === 'taken' && (
+                                    <span style={{ fontSize: '14px', color: '#ef4444' }}>✗</span>
+                                )}
                             </div>
-                            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px' }}>
-                                Only lowercase letters, numbers, and hyphens allowed.
-                            </p>
+                            {slugAvailability === 'available' && (
+                                <p style={{ fontSize: '12px', color: '#22c55e', marginTop: '8px', fontWeight: '500' }}>
+                                    ✓ This link is available!
+                                </p>
+                            )}
+                            {slugAvailability === 'taken' && (
+                                <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '8px', fontWeight: '500' }}>
+                                    ✗ This link is already taken. Please try another.
+                                </p>
+                            )}
+                            {!slugAvailability && customSlug && (
+                                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                                    Only lowercase letters, numbers, and hyphens allowed.
+                                </p>
+                            )}
+                            {!customSlug && (
+                                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                                    Only lowercase letters, numbers, and hyphens allowed.
+                                </p>
+                            )}
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
@@ -804,7 +865,7 @@ export default function Dashboard() {
                             <button
                                 onClick={saveSlug}
                                 className="btn btn-primary"
-                                disabled={!customSlug || isSavingSlug}
+                                disabled={!customSlug || isSavingSlug || slugAvailability !== 'available'}
                             >
                                 {isSavingSlug ? 'Saving...' : 'Create Link'}
                             </button>

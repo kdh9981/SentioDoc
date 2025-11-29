@@ -16,6 +16,7 @@ interface FileMetadata {
     size: number;
     type?: 'file' | 'url';
     external_url?: string;
+    pdfPath?: string;
 }
 
 export default function ViewerPage({ params }: { params: Promise<{ id: string }> }) {
@@ -38,7 +39,8 @@ export default function ViewerPage({ params }: { params: Promise<{ id: string }>
                         mimeType: data.mime_type, // Convert snake_case to camelCase
                         size: data.size,
                         type: data.type || 'file',
-                        external_url: data.external_url
+                        external_url: data.external_url,
+                        pdfPath: data.pdf_path
                     });
                 } else {
                     setError('File not found');
@@ -106,5 +108,5 @@ export default function ViewerPage({ params }: { params: Promise<{ id: string }>
         );
     }
 
-    return <FileViewer fileId={metadata.id} mimeType={metadata.mimeType} fileName={metadata.name} />;
+    return <FileViewer fileId={metadata.id} mimeType={metadata.mimeType} fileName={metadata.name} pdfPath={metadata.pdfPath} />;
 }

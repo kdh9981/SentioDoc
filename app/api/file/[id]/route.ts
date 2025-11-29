@@ -7,6 +7,8 @@ export async function GET(
 ) {
     try {
         const { id: paramId } = await params;
+        const { searchParams } = new URL(request.url);
+        const usePdf = searchParams.get('pdf') === 'true';
 
         // Check if paramId is a UUID
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(paramId);
@@ -14,7 +16,7 @@ export async function GET(
         // Build query based on ID type
         let query = supabaseAdmin
             .from('files')
-            .select('path, mime_type, name')
+            .select('path, mime_type, name, pdf_path')
 
         if (isUUID) {
             query = query.eq('id', paramId);
@@ -28,11 +30,17 @@ export async function GET(
             return NextResponse.json({ error: 'File not found' }, { status: 404 });
         }
 
+        // Determine which file to serve
+        let filePath = fileRecord.path;
+        if (usePdf && fileRecord.pdf_path) {
+            filePath = fileRecord.pdf_path;
+        }
+
         // Get signed URL from Supabase Storage
         const { data: signedUrlData, error: urlError } = await supabaseAdmin
             .storage
             .from('uploaded-files')
-            .createSignedUrl(fileRecord.path, 3600); // 1 hour expiry
+            .createSignedUrl(filePath, 3600); // 1 hour expiry
 
         if (urlError || !signedUrlData) {
             console.error('Failed to generate signed URL:', urlError);

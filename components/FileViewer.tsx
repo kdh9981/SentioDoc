@@ -12,6 +12,7 @@ interface FileViewerProps {
     fileId: string;
     mimeType: string;
     fileName?: string;
+    pdfPath?: string;
 }
 
 type ViewerType = 'pdf' | 'image' | 'video' | 'audio' | 'text' | 'code' | 'csv' | 'office' | 'unsupported';
@@ -82,9 +83,17 @@ function getLanguageFromFilename(fileName: string): string {
     return languageMap[ext] || 'javascript';
 }
 
-export default function FileViewer({ fileId, mimeType, fileName = '' }: FileViewerProps) {
-    const fileUrl = `/api/file/${fileId}`;
+export default function FileViewer({ fileId, mimeType, fileName = '', pdfPath }: FileViewerProps) {
+    // If this is an Office document with a PDF version, use PDF viewer
     const viewerType = detectViewerType(mimeType, fileName);
+    const shouldUsePdfForOffice = viewerType === 'office' && pdfPath;
+    const effectiveViewerType = shouldUsePdfForOffice ? 'pdf' : viewerType;
+
+    // Construct file URL
+    // For converted Office docs, we need to construct the storage path correctly
+    const fileUrl = shouldUsePdfForOffice
+        ? `/api/file/${fileId}?pdf=true`
+        : `/api/file/${fileId}`;
 
     // PDF state
     const [numPages, setNumPages] = useState<number>(0);
@@ -109,12 +118,12 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
 
     // Load text/code content
     useEffect(() => {
-        if (viewerType === 'text' || viewerType === 'code') {
+        if (effectiveViewerType === 'text' || effectiveViewerType === 'code') {
             fetch(fileUrl)
                 .then(res => res.text())
                 .then(text => {
                     setTextContent(text);
-                    if (viewerType === 'code') {
+                    if (effectiveViewerType === 'code') {
                         // Load Prism.js dynamically
                         import('prismjs').then(Prism => {
                             const language = getLanguageFromFilename(fileName);
@@ -128,11 +137,11 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
                     }
                 });
         }
-    }, [viewerType, fileUrl, fileName]);
+    }, [effectiveViewerType, fileUrl, fileName]);
 
     // Load CSV content
     useEffect(() => {
-        if (viewerType === 'csv') {
+        if (effectiveViewerType === 'csv') {
             fetch(fileUrl)
                 .then(res => res.text())
                 .then(text => {
@@ -142,7 +151,7 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
                     });
                 });
         }
-    }, [viewerType, fileUrl]);
+    }, [effectiveViewerType, fileUrl]);
 
     const trackPageDuration = async (page: number, duration: number) => {
         if (!viewerEmail) return;
@@ -164,7 +173,7 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
 
     // PDF page tracking
     useEffect(() => {
-        if (viewerType !== 'pdf' || !viewerEmail) return;
+        if (effectiveViewerType !== 'pdf' || !viewerEmail) return;
 
         setPageStartTime(Date.now());
 
@@ -198,7 +207,7 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
 
     // Keyboard navigation for PDF
     useEffect(() => {
-        if (viewerType !== 'pdf') return;
+        if (effectiveViewerType !== 'pdf') return;
 
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'ArrowLeft') {
@@ -235,7 +244,7 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
     );
 
     // VIDEO VIEWER
-    if (viewerType === 'video') {
+    if (effectiveViewerType === 'video') {
         return (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
                 <Header />
@@ -250,7 +259,7 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
     }
 
     // AUDIO VIEWER
-    if (viewerType === 'audio') {
+    if (effectiveViewerType === 'audio') {
         return (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
                 <Header />
@@ -267,7 +276,7 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
     }
 
     // TEXT VIEWER
-    if (viewerType === 'text') {
+    if (effectiveViewerType === 'text') {
         return (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
                 <Header />
@@ -298,7 +307,7 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
     }
 
     // CODE VIEWER
-    if (viewerType === 'code') {
+    if (effectiveViewerType === 'code') {
         return (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
                 <Header />
@@ -334,7 +343,7 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
     }
 
     // CSV VIEWER
-    if (viewerType === 'csv') {
+    if (effectiveViewerType === 'csv') {
         return (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
                 <Header />
@@ -386,8 +395,8 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
         );
     }
 
-    // OFFICE VIEWER
-    if (viewerType === 'office') {
+    // OFFICE VIEWER (fallback if no PDF conversion available)
+    if (effectiveViewerType === 'office') {
         const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
 
         return (
@@ -410,7 +419,7 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
     }
 
     // UNSUPPORTED VIEWER
-    if (viewerType === 'unsupported') {
+    if (effectiveViewerType === 'unsupported') {
         return (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
                 <Header />
@@ -430,7 +439,7 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
     }
 
     // IMAGE VIEWER
-    if (viewerType === 'image') {
+    if (effectiveViewerType === 'image') {
         return (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a', userSelect: 'none' }}>
                 <Header />

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { supabaseAdmin } from '@/lib/supabase';
+import { convertOfficeToPDF, isConvertibleOfficeDocument } from '@/lib/pdf-converter';
 
 export async function POST(request: NextRequest) {
     try {
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
             const fileExtension = file.name.split('.').pop() || '';
             const storedFileName = `${fileId}.${fileExtension}`;
 
-            // Upload to Supabase Storage
+            // Upload original file to Supabase Storage
             const { data: uploadData, error: uploadError } = await supabaseAdmin
                 .storage
                 .from('uploaded-files')
@@ -35,6 +36,42 @@ export async function POST(request: NextRequest) {
                 throw uploadError;
             }
 
+            // Check if this is an Office document that should be converted to PDF
+            let pdfPath: string | null = null;
+            if (isConvertibleOfficeDocument(file.type)) {
+                try {
+                    console.log(`Converting ${file.name} to PDF...`);
+
+                    // Read file buffer
+                    const arrayBuffer = await file.arrayBuffer();
+                    const buffer = Buffer.from(arrayBuffer);
+
+                    // Convert to PDF
+                    const pdfBuffer = await convertOfficeToPDF(buffer);
+
+                    // Upload PDF version
+                    const pdfFileName = `${fileId}.pdf`;
+                    const { error: pdfUploadError } = await supabaseAdmin
+                        .storage
+                        .from('uploaded-files')
+                        .upload(pdfFileName, pdfBuffer, {
+                            contentType: 'application/pdf',
+                            upsert: false
+                        });
+
+                    if (pdfUploadError) {
+                        console.error('PDF upload error:', pdfUploadError);
+                        // Don't fail the entire upload, just log the error
+                    } else {
+                        pdfPath = pdfFileName;
+                        console.log(`PDF conversion successful: ${pdfFileName}`);
+                    }
+                } catch (conversionError) {
+                    console.error('PDF conversion failed:', conversionError);
+                    // Continue without PDF version
+                }
+            }
+
             // Save metadata to database
             const { error: dbError } = await supabaseAdmin
                 .from('files')
@@ -44,17 +81,25 @@ export async function POST(request: NextRequest) {
                     path: storedFileName,
                     mime_type: file.type,
                     size: file.size,
-                    type: 'file'
+                    type: 'file',
+                    pdf_path: pdfPath
                 });
 
             if (dbError) {
                 console.error('Database insert error:', dbError);
-                // Cleanup uploaded file if DB insert fails
-                await supabaseAdmin.storage.from('uploaded-files').remove([storedFileName]);
+                // Cleanup uploaded files if DB insert fails
+                const filesToRemove = [storedFileName];
+                if (pdfPath) filesToRemove.push(pdfPath);
+                await supabaseAdmin.storage.from('uploaded-files').remove(filesToRemove);
                 throw dbError;
             }
 
-            return NextResponse.json({ success: true, fileId, fileName: file.name });
+            return NextResponse.json({
+                success: true,
+                fileId,
+                fileName: file.name,
+                pdfConverted: !!pdfPath
+            });
         }
 
         // Handle external URL

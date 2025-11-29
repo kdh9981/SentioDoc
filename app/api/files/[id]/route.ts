@@ -64,12 +64,13 @@ export async function PATCH(
             return NextResponse.json({ error: 'Invalid slug format. Use lowercase letters, numbers, and hyphens only.' }, { status: 400 });
         }
 
-        // Check uniqueness
+        // Check uniqueness (only among non-deleted files)
         const { data: existing } = await supabaseAdmin
             .from('files')
             .select('id')
             .eq('slug', slug)
             .neq('id', id) // Exclude current file
+            .is('deleted_at', null) // Only check non-deleted files
             .single();
 
         if (existing) {

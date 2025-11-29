@@ -81,9 +81,9 @@ export async function POST(request: NextRequest) {
                     name: name,
                     type: 'url',
                     external_url: url,
-                    path: null,
-                    mime_type: null,
-                    size: null
+                    path: '', // Empty string instead of null (NOT NULL constraint)
+                    mime_type: 'text/uri-list', // Use standard MIME type for URLs
+                    size: 0 // 0 instead of null (NOT NULL constraint)
                 });
 
             if (dbError) {

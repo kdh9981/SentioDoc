@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ViewerGate from '@/components/ViewerGate';
 import dynamic from 'next/dynamic';
 
@@ -19,8 +20,11 @@ interface FileMetadata {
     pdf_path?: string;
 }
 
-export default function ViewerPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
+export default function CustomDomainHandlerPage() {
+    const searchParams = useSearchParams();
+    const domain = searchParams.get('domain');
+    const slug = searchParams.get('slug');
+
     const [metadata, setMetadata] = useState<FileMetadata | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -28,15 +32,20 @@ export default function ViewerPage({ params }: { params: Promise<{ id: string }>
 
     useEffect(() => {
         const fetchMetadata = async () => {
+            if (!domain || !slug) {
+                setError('Invalid link');
+                setLoading(false);
+                return;
+            }
+
             try {
-                const res = await fetch(`/api/file/${id}/metadata`);
+                const res = await fetch(`/api/file/lookup?domain=${domain}&slug=${slug}`);
                 if (res.ok) {
                     const data = await res.json();
-                    // Map Supabase snake_case to camelCase
                     setMetadata({
                         id: data.id,
                         name: data.name,
-                        mimeType: data.mime_type, // Convert snake_case to camelCase
+                        mimeType: data.mime_type,
                         size: data.size,
                         type: data.type || 'file',
                         external_url: data.external_url,
@@ -53,7 +62,7 @@ export default function ViewerPage({ params }: { params: Promise<{ id: string }>
         };
 
         fetchMetadata();
-    }, [id]);
+    }, [domain, slug]);
 
     // Handle external URL redirect after viewer gate
     useEffect(() => {
@@ -102,11 +111,18 @@ export default function ViewerPage({ params }: { params: Promise<{ id: string }>
                     borderRadius: '50%',
                     animation: 'spin 1s linear infinite'
                 }} />
-                <p style={{ color: 'var(--text-secondary)' }}>Redirecting to {metadata.name}...</p>
+                <p>Redirecting to {metadata.name}...</p>
                 <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
         );
     }
 
-    return <FileViewer fileId={metadata.id} mimeType={metadata.mimeType} fileName={metadata.name} pdfPath={metadata.pdf_path} />;
+    return (
+        <FileViewer
+            fileId={metadata.id}
+            mimeType={metadata.mimeType}
+            fileName={metadata.name}
+            pdfPath={metadata.pdf_path}
+        />
+    );
 }

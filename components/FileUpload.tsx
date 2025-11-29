@@ -1,16 +1,34 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import LinkConfigModal from './LinkConfigModal';
 
 type UploadMode = 'file' | 'url';
+
+interface LinkResult {
+    fileId: string;
+    slug: string;
+    url: string;
+}
 
 export default function FileUpload({ onUploadSuccess }: { onUploadSuccess: () => void }) {
     const [mode, setMode] = useState<UploadMode>('file');
     const [isDragging, setIsDragging] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
     const [externalUrl, setExternalUrl] = useState('');
     const [urlName, setUrlName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Modal state
+    const [showConfigModal, setShowConfigModal] = useState(false);
+    const [pendingFileInfo, setPendingFileInfo] = useState<{
+        file?: File;
+        url?: string;
+        name: string;
+    } | null>(null);
+
+    // Success state
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [createdLink, setCreatedLink] = useState<LinkResult | null>(null);
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -26,45 +44,25 @@ export default function FileUpload({ onUploadSuccess }: { onUploadSuccess: () =>
         setIsDragging(false);
         const files = e.dataTransfer.files;
         if (files.length > 0) {
-            uploadFile(files[0]);
+            openConfigModal(files[0]);
         }
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            uploadFile(e.target.files[0]);
+            openConfigModal(e.target.files[0]);
         }
     };
 
-    const uploadFile = async (file: File) => {
-        setIsUploading(true);
-        const formData = new FormData();
-        formData.append('file', file);
-
-        try {
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (response.ok) {
-                onUploadSuccess();
-            } else {
-                const data = await response.json();
-                alert(data.error || 'Upload failed');
-            }
-        } catch (error) {
-            console.error('Error uploading file:', error);
-            alert('Upload failed');
-        } finally {
-            setIsUploading(false);
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-        }
+    const openConfigModal = (file: File) => {
+        setPendingFileInfo({
+            file,
+            name: file.name
+        });
+        setShowConfigModal(true);
     };
 
-    const handleUrlSubmit = async (e: React.FormEvent) => {
+    const handleUrlSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!externalUrl || !urlName) {
@@ -72,35 +70,95 @@ export default function FileUpload({ onUploadSuccess }: { onUploadSuccess: () =>
             return;
         }
 
-        setIsUploading(true);
-        const formData = new FormData();
-        formData.append('url', externalUrl);
-        formData.append('name', urlName);
+        setPendingFileInfo({
+            url: externalUrl,
+            name: urlName
+        });
+        setShowConfigModal(true);
+    };
 
-        try {
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
+    const handleConfigComplete = (result: LinkResult) => {
+        setShowConfigModal(false);
+        setPendingFileInfo(null);
+        setCreatedLink(result);
+        setShowSuccess(true);
 
-            if (response.ok) {
-                setExternalUrl('');
-                setUrlName('');
-                onUploadSuccess();
-            } else {
-                const data = await response.json();
-                alert(data.error || 'Failed to create link');
-            }
-        } catch (error) {
-            console.error('Error creating link:', error);
-            alert('Failed to create link');
-        } finally {
-            setIsUploading(false);
+        // Reset form
+        setExternalUrl('');
+        setUrlName('');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
+
+        // Auto-hide success after 5 seconds
+        setTimeout(() => {
+            setShowSuccess(false);
+            onUploadSuccess();
+        }, 5000);
+    };
+
+    const handleConfigCancel = () => {
+        setShowConfigModal(false);
+        setPendingFileInfo(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const copyLink = (url: string) => {
+        navigator.clipboard.writeText(url);
+        alert('Link copied to clipboard!');
     };
 
     return (
         <div>
+            {/* Success Message */}
+            {showSuccess && createdLink && (
+                <div style={{
+                    padding: '16px',
+                    background: 'linear-gradient(135deg, #22c55e 0%, #10b981 100%)',
+                    borderRadius: '8px',
+                    marginBottom: '20px',
+                    color: 'white',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                }}>
+                    <div style={{ fontSize: '16px', fontWeight: '600' }}>
+                        ✅ Link created successfully!
+                    </div>
+                    <div style={{
+                        background: 'rgba(255,255,255,0.2)',
+                        padding: '12px',
+                        borderRadius: '6px',
+                        wordBreak: 'break-all',
+                        fontSize: '14px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '12px'
+                    }}>
+                        <span>{createdLink.url}</span>
+                        <button
+                            onClick={() => copyLink(createdLink.url)}
+                            style={{
+                                background: 'white',
+                                color: '#22c55e',
+                                border: 'none',
+                                padding: '6px 12px',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                flexShrink: 0
+                            }}
+                        >
+                            Copy Link
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Tabs */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border)' }}>
                 <button
@@ -165,38 +223,22 @@ export default function FileUpload({ onUploadSuccess }: { onUploadSuccess: () =>
                         onChange={handleFileSelect}
                         style={{ display: 'none' }}
                     />
-                    {isUploading ? (
-                        <div className="animate-fade-in">
-                            <div style={{
-                                width: '40px',
-                                height: '40px',
-                                border: '3px solid var(--surface-hover)',
-                                borderTopColor: 'var(--primary)',
-                                borderRadius: '50%',
-                                animation: 'spin 1s linear infinite',
-                                margin: '0 auto 16px'
-                            }} />
-                            <p style={{ color: 'var(--text-secondary)' }}>Uploading your file...</p>
-                            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                    <div className="animate-fade-in">
+                        <div style={{
+                            fontSize: '48px',
+                            marginBottom: '16px',
+                            color: isDragging ? 'var(--primary)' : 'var(--text-secondary)',
+                            transition: 'color 0.2s'
+                        }}>
+                            📄
                         </div>
-                    ) : (
-                        <div className="animate-fade-in">
-                            <div style={{
-                                fontSize: '48px',
-                                marginBottom: '16px',
-                                color: isDragging ? 'var(--primary)' : 'var(--text-secondary)',
-                                transition: 'color 0.2s'
-                            }}>
-                                📄
-                            </div>
-                            <p style={{ fontSize: '18px', fontWeight: 500, marginBottom: '8px', color: 'var(--text-primary)' }}>
-                                {isDragging ? 'Drop file here' : 'Click or drag file to upload'}
-                            </p>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                                Supports PDF, Office docs, images, video, audio, code, CSV, and more
-                            </p>
-                        </div>
-                    )}
+                        <p style={{ fontSize: '18px', fontWeight: 500, marginBottom: '8px', color: 'var(--text-primary)' }}>
+                            {isDragging ? 'Drop file here' : 'Click or drag file to upload'}
+                        </p>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+                            Supports PDF, Office docs, images, video, audio, code, CSV, and more
+                        </p>
+                    </div>
                 </div>
             )}
 
@@ -212,7 +254,6 @@ export default function FileUpload({ onUploadSuccess }: { onUploadSuccess: () =>
                             value={urlName}
                             onChange={(e) => setUrlName(e.target.value)}
                             placeholder="e.g., YouTube Demo Video"
-                            disabled={isUploading}
                             style={{
                                 width: '100%',
                                 padding: '12px',
@@ -233,7 +274,6 @@ export default function FileUpload({ onUploadSuccess }: { onUploadSuccess: () =>
                             value={externalUrl}
                             onChange={(e) => setExternalUrl(e.target.value)}
                             placeholder="https://youtube.com/watch?v=..."
-                            disabled={isUploading}
                             style={{
                                 width: '100%',
                                 padding: '12px',
@@ -250,13 +290,21 @@ export default function FileUpload({ onUploadSuccess }: { onUploadSuccess: () =>
                     </div>
                     <button
                         type="submit"
-                        disabled={isUploading}
                         className="btn btn-primary"
                         style={{ width: '100%', marginTop: '8px' }}
                     >
-                        {isUploading ? 'Creating Link...' : 'Create Link'}
+                        Configure Link →
                     </button>
                 </form>
+            )}
+
+            {/* Link Configuration Modal */}
+            {showConfigModal && pendingFileInfo && (
+                <LinkConfigModal
+                    fileInfo={pendingFileInfo}
+                    onComplete={handleConfigComplete}
+                    onCancel={handleConfigCancel}
+                />
             )}
         </div>
     );

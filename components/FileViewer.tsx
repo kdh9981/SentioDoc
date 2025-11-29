@@ -12,6 +12,7 @@ interface FileViewerProps {
     fileId: string;
     mimeType: string;
     fileName?: string;
+    pdfPath?: string | null;
 }
 
 type ViewerType = 'pdf' | 'image' | 'video' | 'audio' | 'text' | 'code' | 'csv' | 'office' | 'unsupported';
@@ -82,7 +83,7 @@ function getLanguageFromFilename(fileName: string): string {
     return languageMap[ext] || 'javascript';
 }
 
-export default function FileViewer({ fileId, mimeType, fileName = '' }: FileViewerProps) {
+export default function FileViewer({ fileId, mimeType, fileName = '', pdfPath }: FileViewerProps) {
     const fileUrl = `/api/file/${fileId}`;
     const viewerType = detectViewerType(mimeType, fileName);
 
@@ -388,22 +389,139 @@ export default function FileViewer({ fileId, mimeType, fileName = '' }: FileView
 
     // OFFICE VIEWER
     if (viewerType === 'office') {
-        const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
+        // If we have a converted PDF, use the PDF viewer
+        if (pdfPath) {
+            // Reuse the PDF viewer logic by rendering a Document component
+            // We need to construct the URL with ?pdf=true
+            const pdfUrl = `/api/file/${fileId}?pdf=true`;
 
+            return (
+                <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a', userSelect: 'none' }}>
+                    <Header />
+                    <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
+                        {/* Navigation Arrows */}
+                        {numPages > 1 && (
+                            <>
+                                <button
+                                    onClick={prevPage}
+                                    disabled={pageNumber <= 1}
+                                    style={{
+                                        position: 'absolute',
+                                        left: '20px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: 'none',
+                                        color: 'white',
+                                        fontSize: '24px',
+                                        padding: '20px',
+                                        borderRadius: '50%',
+                                        cursor: 'pointer',
+                                        zIndex: 20,
+                                        opacity: pageNumber <= 1 ? 0 : 1,
+                                        transition: 'opacity 0.2s, background 0.2s'
+                                    }}
+                                    className="nav-arrow"
+                                >
+                                    ‹
+                                </button>
+                                <button
+                                    onClick={nextPage}
+                                    disabled={pageNumber >= numPages}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '20px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: 'none',
+                                        color: 'white',
+                                        fontSize: '24px',
+                                        padding: '20px',
+                                        borderRadius: '50%',
+                                        cursor: 'pointer',
+                                        zIndex: 20,
+                                        opacity: pageNumber >= numPages ? 0 : 1,
+                                        transition: 'opacity 0.2s, background 0.2s'
+                                    }}
+                                    className="nav-arrow"
+                                >
+                                    ›
+                                </button>
+                            </>
+                        )}
+
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                            <Document
+                                file={pdfUrl}
+                                onLoadSuccess={onDocumentLoadSuccess}
+                                loading={<div style={{ color: 'white' }}>Loading Document...</div>}
+                                error={
+                                    <div style={{ color: 'white', textAlign: 'center' }}>
+                                        <p>Failed to load document preview.</p>
+                                        <a href={fileUrl} download className="btn btn-primary" style={{ marginTop: '10px', display: 'inline-block' }}>
+                                            Download Original File
+                                        </a>
+                                    </div>
+                                }
+                            >
+                                <Page
+                                    pageNumber={pageNumber}
+                                    renderTextLayer={false}
+                                    renderAnnotationLayer={false}
+                                    height={window.innerHeight * 0.9}
+                                    className="pdf-page"
+                                />
+                            </Document>
+                        </div>
+                    </div>
+
+                    {/* Page indicator */}
+                    {numPages > 0 && (
+                        <div style={{
+                            position: 'absolute',
+                            bottom: '20px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            background: 'rgba(0,0,0,0.7)',
+                            padding: '8px 16px',
+                            borderRadius: '20px',
+                            color: 'white',
+                            fontSize: '14px',
+                            pointerEvents: 'none'
+                        }}>
+                            {pageNumber} / {numPages}
+                        </div>
+                    )}
+
+                    <style jsx global>{`
+                        .nav-arrow:hover {
+                            background: rgba(255,255,255,0.2) !important;
+                        }
+                        
+                        .pdf-page canvas {
+                            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+                            border-radius: 4px;
+                        }
+                    `}</style>
+                </div>
+            );
+        }
+
+        // Fallback for Office docs without PDF (e.g. conversion failed)
         return (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
                 <Header />
-                <div style={{ flex: 1, padding: '60px 20px 20px' }}>
-                    <iframe
-                        src={officeViewerUrl}
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            border: 'none',
-                            borderRadius: '8px'
-                        }}
-                        title="Office Document Viewer"
-                    />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '60px 20px', gap: '24px' }}>
+                    <div style={{ fontSize: '64px' }}>📄</div>
+                    <h2 style={{ color: 'white' }}>Document Preview</h2>
+                    <p style={{ color: 'var(--text-secondary)', textAlign: 'center', maxWidth: '400px' }}>
+                        This document cannot be previewed directly in the browser.
+                        Please download it to view.
+                    </p>
+                    <a href={fileUrl} download className="btn btn-primary">
+                        Download {fileName}
+                    </a>
                 </div>
             </div>
         );

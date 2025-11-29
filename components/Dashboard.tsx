@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { signOut, useSession } from "next-auth/react";
 import FileUpload from './FileUpload';
 import ThemeToggle from './ThemeToggle';
+import DomainSettings from './DomainSettings';
 
 interface FileRecord {
     id: string;
@@ -38,6 +39,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [recentActivity, setRecentActivity] = useState<ActivityLog[]>([]);
     const [stats, setStats] = useState<GlobalStats>({ totalViews: 0, uniqueViewers: 0, topCountry: 'N/A' });
+    const [activeTab, setActiveTab] = useState<'overview' | 'domains'>('overview');
 
     const fetchDashboardData = async () => {
         try {
@@ -275,180 +277,227 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 500px), 1fr))', gap: '40px', alignItems: 'start' }}>
-                {/* Left Column: Upload & Files */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-                    <div className="card">
-                        <h2 style={{ marginBottom: '8px', fontSize: '20px', fontWeight: '600' }}>Create Link</h2>
-                        <p style={{ marginBottom: '24px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-                            Track views on documents or external links (YouTube, X, websites, and more)
-                        </p>
-                        <FileUpload onUploadSuccess={fetchDashboardData} />
-                    </div>
-
-                    <div className="card">
-                        <h2 style={{ marginBottom: '24px', fontSize: '20px', fontWeight: '600' }}>Your Files</h2>
-                        {loading ? (
-                            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading...</div>
-                        ) : files.length === 0 ? (
-                            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                No files uploaded yet.
-                            </div>
-                        ) : (
-                            <div style={{ overflowX: 'auto' }}>
-                                <table style={{ width: '100%' }}>
-                                    <thead>
-                                        <tr>
-                                            <th style={{ textAlign: 'left', paddingBottom: '12px', color: 'var(--text-secondary)', fontSize: '12px', textTransform: 'uppercase' }}>Name</th>
-                                            <th style={{ textAlign: 'right', paddingBottom: '12px', color: 'var(--text-secondary)', fontSize: '12px', textTransform: 'uppercase' }}>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {files.map((file) => (
-                                            <tr key={file.id} style={{
-                                                borderTop: '1px solid var(--border)',
-                                                opacity: file.deletedAt ? 0.6 : 1,
-                                                background: file.deletedAt ? 'rgba(255,255,255,0.02)' : 'transparent'
-                                            }}>
-                                                <td style={{ padding: '16px 0', maxWidth: '300px' }}>
-                                                    <div style={{
-                                                        fontWeight: '500',
-                                                        whiteSpace: 'nowrap',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '8px'
-                                                    }} title={file.name}>
-                                                        <span style={{ flexShrink: 0, fontSize: '18px' }}>
-                                                            {file.type === 'url' ? '🔗' : '📄'}
-                                                        </span>
-                                                        {file.name}
-                                                        {file.deletedAt && (
-                                                            <span style={{
-                                                                fontSize: '10px',
-                                                                background: '#ef4444',
-                                                                color: 'white',
-                                                                padding: '2px 6px',
-                                                                borderRadius: '4px',
-                                                                flexShrink: 0
-                                                            }}>DELETED</span>
-                                                        )}
-                                                    </div>
-                                                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                                                        {file.type === 'url' && file.externalUrl && (
-                                                            <div style={{ marginBottom: '4px', fontStyle: 'italic' }}>
-                                                                → {file.externalUrl.length > 50 ? file.externalUrl.substring(0, 50) + '...' : file.externalUrl}
-                                                            </div>
-                                                        )}
-                                                        {file.views} views • {new Date(file.createdAt).toLocaleDateString()}
-                                                    </div>
-                                                </td>
-                                                <td style={{ textAlign: 'right', padding: '16px 0' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
-                                                        <button
-                                                            className="btn btn-secondary"
-                                                            onClick={() => viewAnalytics(file)}
-                                                            style={{ fontSize: '12px', padding: '6px 12px' }}
-                                                        >
-                                                            Analytics
-                                                        </button>
-                                                        {file.deletedAt ? (
-                                                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', padding: '6px 12px' }}>
-                                                                Archived
-                                                            </span>
-                                                        ) : (
-                                                            <>
-                                                                {file.slug ? (
-                                                                    <button
-                                                                        className="btn btn-primary"
-                                                                        onClick={() => copyLink(file)}
-                                                                        style={{ fontSize: '12px', padding: '6px 12px' }}
-                                                                    >
-                                                                        Copy Link
-                                                                    </button>
-                                                                ) : (
-                                                                    <button
-                                                                        className="btn btn-primary"
-                                                                        onClick={() => handleCreateLink(file)}
-                                                                        style={{ fontSize: '12px', padding: '6px 12px' }}
-                                                                    >
-                                                                        Create Link
-                                                                    </button>
-                                                                )}
-                                                                <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }}></div>
-                                                                <button
-                                                                    onClick={() => handleDelete(file)}
-                                                                    style={{
-                                                                        background: 'none',
-                                                                        border: 'none',
-                                                                        color: '#ef4444',
-                                                                        cursor: 'pointer',
-                                                                        padding: '8px',
-                                                                        borderRadius: '6px',
-                                                                        display: 'inline-flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center',
-                                                                        transition: 'background 0.2s'
-                                                                    }}
-                                                                    title="Delete file"
-                                                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
-                                                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                                                >
-                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                        <path d="M3 6h18"></path>
-                                                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                                                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                                                                    </svg>
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Right Column: Recent Activity Feed */}
-                <div className="card" style={{ height: '100%', maxHeight: '800px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                    <h2 style={{ marginBottom: '24px', fontSize: '20px', fontWeight: '600' }}>Recent Activity</h2>
-                    <div style={{ overflowY: 'auto', flex: 1, paddingRight: '8px' }}>
-                        {recentActivity.length === 0 ? (
-                            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                No activity yet. Share a file to see logs here.
-                            </div>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                {recentActivity.map((log, index) => (
-                                    <div key={index} style={{
-                                        padding: '16px',
-                                        background: 'var(--surface-hover)',
-                                        borderRadius: '8px',
-                                        border: '1px solid var(--border)'
-                                    }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                            <span style={{ fontWeight: '600', color: 'var(--primary)' }}>{log.viewerName}</span>
-                                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{formatKST(log.accessedAt)}</span>
-                                        </div>
-                                        <div style={{ fontSize: '14px', marginBottom: '4px' }}>
-                                            Viewed <strong>{log.fileName}</strong>
-                                        </div>
-                                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', gap: '12px' }}>
-                                            <span>📧 {log.viewerEmail}</span>
-                                            <span>🌍 {log.country || 'Unknown'}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
+            {/* Tab Navigation */}
+            <div style={{
+                display: 'flex',
+                gap: '8px',
+                marginBottom: '40px',
+                borderBottom: '2px solid var(--border)',
+                paddingBottom: '0'
+            }}>
+                <button
+                    onClick={() => setActiveTab('overview')}
+                    style={{
+                        padding: '12px 24px',
+                        border: 'none',
+                        background: 'transparent',
+                        color: activeTab === 'overview' ? 'var(--primary)' : 'var(--text-secondary)',
+                        fontWeight: activeTab === 'overview' ? '600' : '400',
+                        borderBottom: activeTab === 'overview' ? '2px solid var(--primary)' : 'none',
+                        marginBottom: '-2px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    📊 Overview
+                </button>
+                <button
+                    onClick={() => setActiveTab('domains')}
+                    style={{
+                        padding: '12px 24px',
+                        border: 'none',
+                        background: 'transparent',
+                        color: activeTab === 'domains' ? 'var(--primary)' : 'var(--text-secondary)',
+                        fontWeight: activeTab === 'domains' ? '600' : '400',
+                        borderBottom: activeTab === 'domains' ? '2px solid var(--primary)' : 'none',
+                        marginBottom: '-2px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    🌐 Domains
+                </button>
             </div>
+
+            {/* Tab Content */}
+            {activeTab === 'domains' ? (
+                <DomainSettings />
+            ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 500px), 1fr))', gap: '40px', alignItems: 'start' }}>
+                    {/* Left Column: Upload & Files */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+                        <div className="card">
+                            <h2 style={{ marginBottom: '8px', fontSize: '20px', fontWeight: '600' }}>Create Link</h2>
+                            <p style={{ marginBottom: '24px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+                                Track views on documents or external links (YouTube, X, websites, and more)
+                            </p>
+                            <FileUpload onUploadSuccess={fetchDashboardData} />
+                        </div>
+
+                        <div className="card">
+                            <h2 style={{ marginBottom: '24px', fontSize: '20px', fontWeight: '600' }}>Your Files</h2>
+                            {loading ? (
+                                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading...</div>
+                            ) : files.length === 0 ? (
+                                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                    No files uploaded yet.
+                                </div>
+                            ) : (
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%' }}>
+                                        <thead>
+                                            <tr>
+                                                <th style={{ textAlign: 'left', paddingBottom: '12px', color: 'var(--text-secondary)', fontSize: '12px', textTransform: 'uppercase' }}>Name</th>
+                                                <th style={{ textAlign: 'right', paddingBottom: '12px', color: 'var(--text-secondary)', fontSize: '12px', textTransform: 'uppercase' }}>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {files.map((file) => (
+                                                <tr key={file.id} style={{
+                                                    borderTop: '1px solid var(--border)',
+                                                    opacity: file.deletedAt ? 0.6 : 1,
+                                                    background: file.deletedAt ? 'rgba(255,255,255,0.02)' : 'transparent'
+                                                }}>
+                                                    <td style={{ padding: '16px 0', maxWidth: '300px' }}>
+                                                        <div style={{
+                                                            fontWeight: '500',
+                                                            whiteSpace: 'nowrap',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px'
+                                                        }} title={file.name}>
+                                                            <span style={{ flexShrink: 0, fontSize: '18px' }}>
+                                                                {file.type === 'url' ? '🔗' : '📄'}
+                                                            </span>
+                                                            {file.name}
+                                                            {file.deletedAt && (
+                                                                <span style={{
+                                                                    fontSize: '10px',
+                                                                    background: '#ef4444',
+                                                                    color: 'white',
+                                                                    padding: '2px 6px',
+                                                                    borderRadius: '4px',
+                                                                    flexShrink: 0
+                                                                }}>DELETED</span>
+                                                            )}
+                                                        </div>
+                                                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                                                            {file.type === 'url' && file.externalUrl && (
+                                                                <div style={{ marginBottom: '4px', fontStyle: 'italic' }}>
+                                                                    → {file.externalUrl.length > 50 ? file.externalUrl.substring(0, 50) + '...' : file.externalUrl}
+                                                                </div>
+                                                            )}
+                                                            {file.views} views • {new Date(file.createdAt).toLocaleDateString()}
+                                                        </div>
+                                                    </td>
+                                                    <td style={{ textAlign: 'right', padding: '16px 0' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                                                            <button
+                                                                className="btn btn-secondary"
+                                                                onClick={() => viewAnalytics(file)}
+                                                                style={{ fontSize: '12px', padding: '6px 12px' }}
+                                                            >
+                                                                Analytics
+                                                            </button>
+                                                            {file.deletedAt ? (
+                                                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', padding: '6px 12px' }}>
+                                                                    Archived
+                                                                </span>
+                                                            ) : (
+                                                                <>
+                                                                    {file.slug ? (
+                                                                        <button
+                                                                            className="btn btn-primary"
+                                                                            onClick={() => copyLink(file)}
+                                                                            style={{ fontSize: '12px', padding: '6px 12px' }}
+                                                                        >
+                                                                            Copy Link
+                                                                        </button>
+                                                                    ) : (
+                                                                        <button
+                                                                            className="btn btn-primary"
+                                                                            onClick={() => handleCreateLink(file)}
+                                                                            style={{ fontSize: '12px', padding: '6px 12px' }}
+                                                                        >
+                                                                            Create Link
+                                                                        </button>
+                                                                    )}
+                                                                    <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }}></div>
+                                                                    <button
+                                                                        onClick={() => handleDelete(file)}
+                                                                        style={{
+                                                                            background: 'none',
+                                                                            border: 'none',
+                                                                            color: '#ef4444',
+                                                                            cursor: 'pointer',
+                                                                            padding: '8px',
+                                                                            borderRadius: '6px',
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            transition: 'background 0.2s'
+                                                                        }}
+                                                                        title="Delete file"
+                                                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                                                    >
+                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                            <path d="M3 6h18"></path>
+                                                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                                                        </svg>
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right Column: Recent Activity Feed */}
+                    <div className="card" style={{ height: '100%', maxHeight: '800px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                        <h2 style={{ marginBottom: '24px', fontSize: '20px', fontWeight: '600' }}>Recent Activity</h2>
+                        <div style={{ overflowY: 'auto', flex: 1, paddingRight: '8px' }}>
+                            {recentActivity.length === 0 ? (
+                                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                    No activity yet. Share a file to see logs here.
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    {recentActivity.map((log, index) => (
+                                        <div key={index} style={{
+                                            padding: '16px',
+                                            background: 'var(--surface-hover)',
+                                            borderRadius: '8px',
+                                            border: '1px solid var(--border)'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                <span style={{ fontWeight: '600', color: 'var(--primary)' }}>{log.viewerName}</span>
+                                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{formatKST(log.accessedAt)}</span>
+                                            </div>
+                                            <div style={{ fontSize: '14px', marginBottom: '4px' }}>
+                                                Viewed <strong>{log.fileName}</strong>
+                                            </div>
+                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', gap: '12px' }}>
+                                                <span>📧 {log.viewerEmail}</span>
+                                                <span>🌍 {log.country || 'Unknown'}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Analytics Modal */}
             {showAnalyticsModal && (

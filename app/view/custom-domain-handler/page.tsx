@@ -20,7 +20,9 @@ interface FileMetadata {
     pdf_path?: string;
 }
 
-export default function CustomDomainHandlerPage() {
+import { Suspense } from 'react';
+
+function CustomDomainHandlerContent() {
     const searchParams = useSearchParams();
     const domain = searchParams.get('domain');
     const slug = searchParams.get('slug');
@@ -124,5 +126,13 @@ export default function CustomDomainHandlerPage() {
             fileName={metadata.name}
             pdfPath={metadata.pdf_path}
         />
+    );
+}
+
+export default function CustomDomainHandlerPage() {
+    return (
+        <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>}>
+            <CustomDomainHandlerContent />
+        </Suspense>
     );
 }

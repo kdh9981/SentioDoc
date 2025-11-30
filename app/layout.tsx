@@ -1,21 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
-  title: "Document Viewer - Secure Document Sharing",
-  description: "Share documents securely and track who views them with detailed analytics.",
+  title: "LinkLens - Share anything. See everything.",
+  description: "Track who views your documents, videos, or any link. Know who's serious with branded links and real-time analytics.",
+  keywords: ["link tracking", "document sharing", "analytics", "branded links", "viewer tracking"],
+  openGraph: {
+    title: "LinkLens - Share anything. See everything.",
+    description: "Track who views your documents, videos, or any link. Know who's serious with branded links and real-time analytics.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -24,8 +25,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className="scroll-smooth">
+      <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>
           {children}
         </Providers>

@@ -17,7 +17,7 @@ export default withAuth(
         if (isDefaultDomain) {
             // Check for root-level slugs: /twitter
             // Exclude reserved paths
-            const reservedPaths = ['/api', '/view', '/auth', '/_next', '/favicon.ico'];
+            const reservedPaths = ['/api', '/view', '/auth', '/_next', '/favicon.ico', '/pricing'];
             const isReserved = reservedPaths.some(p => url.pathname.startsWith(p)) || url.pathname === '/';
 
             if (!isReserved) {

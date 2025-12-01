@@ -12,9 +12,9 @@ const Hero: React.FC = () => {
         {/* Left Content */}
         <div style={{ maxWidth: '672px', position: 'relative', zIndex: 10 }}>
           <h1 style={{ fontSize: '72px', fontWeight: 800, color: '#0f172a', lineHeight: 1.1, marginBottom: '24px' }}>
-            Share anything. <br />
+            Share anything <br />
             <span style={{ background: 'linear-gradient(to right, #6366f1, #4f46e5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              See everything.
+              See everything
             </span>
           </h1>
 
@@ -51,7 +51,7 @@ const Hero: React.FC = () => {
             </div>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <Check style={{ width: '20px', height: '20px', color: '#22c55e', marginRight: '8px' }} />
-              Setup in 2 minutes
+              Setup in 60 seconds
             </div>
           </div>
         </div>

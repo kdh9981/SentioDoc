@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase';
-
-// Domain tier limits
-const DOMAIN_LIMITS = {
-    free: 0,
-    pro: 50,
-    enterprise: 500
-};
+import { getTierLimits } from '@/lib/tierLimits';
+import { canAddDomain } from '@/lib/usageTracking';
 
 // Helper to get user tier
 async function getUserTier(userEmail: string) {
@@ -17,28 +12,19 @@ async function getUserTier(userEmail: string) {
         .eq('email', userEmail)
         .single();
 
-    return (data?.tier as 'free' | 'pro' | 'enterprise') || 'free';
-}
-
-// Helper to count user's domains
-async function getUserDomainCount(userEmail: string) {
-    const { count } = await supabaseAdmin
-        .from('custom_domains')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_email', userEmail);
-
-    return count || 0;
+    return data?.tier || 'free';
 }
 
 // GET /api/domains - List user's custom domains
 export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession();
-        if (!session?.user?.email) {
+        const supabase = await createServerSupabaseClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const userEmail = session.user.email;
+        const userEmail = user.email;
         const tier = await getUserTier(userEmail);
 
         // Fetch domains
@@ -50,11 +36,12 @@ export async function GET(request: NextRequest) {
 
         if (error) throw error;
 
+        const tierLimits = getTierLimits(tier);
         return NextResponse.json({
             domains: domains || [],
             tier,
             limits: {
-                max: DOMAIN_LIMITS[tier],
+                max: tierLimits.customDomains,
                 current: domains?.length || 0
             }
         });
@@ -67,12 +54,13 @@ export async function GET(request: NextRequest) {
 // POST /api/domains - Add new custom domain
 export async function POST(request: NextRequest) {
     try {
-        const session = await getServerSession();
-        if (!session?.user?.email) {
+        const supabase = await createServerSupabaseClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const userEmail = session.user.email;
+        const userEmail = user.email;
         const body = await request.json();
         const { subdomain, domain } = body;
 
@@ -83,22 +71,9 @@ export async function POST(request: NextRequest) {
 
         // Check tier limits
         const tier = await getUserTier(userEmail);
-        if (DOMAIN_LIMITS[tier] === 0) {
-            return NextResponse.json({
-                error: 'Custom domains are not available on the free tier',
-                upgradeRequired: true,
-                tier: 'pro'
-            }, { status: 403 });
-        }
-
-        const currentCount = await getUserDomainCount(userEmail);
-        if (currentCount >= DOMAIN_LIMITS[tier]) {
-            return NextResponse.json({
-                error: `Domain limit reached. ${tier} tier allows ${DOMAIN_LIMITS[tier]} domains`,
-                upgradeRequired: tier !== 'enterprise',
-                currentTier: tier,
-                suggestedTier: tier === 'pro' ? 'enterprise' : 'pro'
-            }, { status: 403 });
+        const domainCheck = await canAddDomain(userEmail, tier);
+        if (!domainCheck.allowed) {
+            return NextResponse.json({ error: domainCheck.reason }, { status: 403 });
         }
 
         // Build full domain

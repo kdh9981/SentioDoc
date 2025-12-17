@@ -12,15 +12,17 @@ const Pricing: React.FC = () => {
       price: 0,
       yearlyPrice: 0,
       description: 'Perfect for getting started',
+      includesFrom: null,
       features: [
-        '10 links',
+        '10 active links',
+        '5,000 views + clicks/month',
         'Basic analytics (views, visitors, timestamps)',
         'Email capture',
-        '50MB storage',
+        '100MB file storage',
         '14-day analytics history'
       ],
-      cta: 'Get Started',
-      ctaLink: '/auth/signin',
+      cta: 'Get started',
+      ctaLink: '/auth/signup',
       highlighted: false
     },
     {
@@ -28,17 +30,18 @@ const Pricing: React.FC = () => {
       price: 9,
       yearlyPrice: 7,
       description: 'For active creators & founders',
+      includesFrom: 'Free',
       features: [
-        '1,000 links',
+        'Total 500 active links',
+        'Total 50,000 views + clicks/month',
         'Full analytics (device, country, traffic source)',
         '1 custom domain',
-        'Remove LinkLens branding',
-        'Real-time notifications',
-        '10GB storage',
-        '1-year analytics history'
+        'Custom logo, no watermark',
+        'Total 10GB file storage',
+        'Total 1-year analytics history'
       ],
-      cta: 'Start Free Trial',
-      ctaLink: '/auth/signin?plan=starter',
+      cta: 'Start free trial',
+      ctaLink: '/auth/signup?plan=starter',
       highlighted: true
     },
     {
@@ -46,18 +49,19 @@ const Pricing: React.FC = () => {
       price: 19,
       yearlyPrice: 15,
       description: 'For power users & teams',
+      includesFrom: 'Starter',
       features: [
-        'Unlimited links',
+        'Total 5,000 active links',
+        'Total 100,000 views + clicks/month',
         'Advanced analytics (city, page-by-page, completion rate)',
-        'Unlimited custom domains',
-        'Remove LinkLens branding',
+        '10 custom domains',
         'Export data (CSV)',
-        '50GB storage',
+        'Total 50GB file storage',
         'Lifetime analytics history',
         'Priority support'
       ],
-      cta: 'Start Free Trial',
-      ctaLink: '/auth/signin?plan=pro',
+      cta: 'Start free trial',
+      ctaLink: '/auth/signup?plan=pro',
       highlighted: false
     }
   ];
@@ -249,7 +253,7 @@ const Pricing: React.FC = () => {
                   fontSize: '12px',
                   fontWeight: 700
                 }}>
-                  MOST POPULAR
+                  Most popular
                 </div>
               )}
 
@@ -290,6 +294,18 @@ const Pricing: React.FC = () => {
                 gap: '12px',
                 marginBottom: '32px'
               }}>
+                {plan.includesFrom && (
+                  <div style={{
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: '#6366f1',
+                    marginBottom: '4px',
+                    paddingBottom: '8px',
+                    borderBottom: '1px solid #e2e8f0'
+                  }}>
+                    Everything in {plan.includesFrom}, plus:
+                  </div>
+                )}
                 {plan.features.map((feature, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <Check size={18} style={{ color: '#22c55e', flexShrink: 0 }} />

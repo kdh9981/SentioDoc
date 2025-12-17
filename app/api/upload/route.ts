@@ -1,20 +1,156 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcryptjs';
 import { supabaseAdmin } from '@/lib/supabase';
 import { convertOfficeToPDF, isOfficeDocument } from '@/lib/pdf-converter';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { canCreateLink, canUploadFile } from '@/lib/usageTracking';
+import { PDFDocument } from 'pdf-lib';
+import * as XLSX from 'xlsx';
+import * as mm from 'music-metadata';
+
+// Helper: Extract page count from PDF buffer
+async function extractPdfPageCount(buffer: ArrayBuffer | Buffer): Promise<number | null> {
+    try {
+        const pdfDoc = await PDFDocument.load(buffer);
+        return pdfDoc.getPageCount();
+    } catch (error) {
+        console.error('Failed to extract PDF page count:', error);
+        return null;
+    }
+}
+
+// Helper: Extract sheet count from Excel buffer
+async function extractExcelSheetCount(buffer: ArrayBuffer): Promise<number | null> {
+    try {
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        return workbook.SheetNames.length;
+    } catch (error) {
+        console.error('Failed to extract Excel sheet count:', error);
+        return null;
+    }
+}
+
+// Helper: Check if file is Excel
+function isExcelDocument(mimeType: string): boolean {
+    return mimeType.includes('spreadsheet') ||
+           mimeType.includes('excel') ||
+           mimeType === 'application/vnd.ms-excel' ||
+           mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+}
+
+// Helper: Check if file is a multi-page document (PDF or Office)
+function isMultiPageDocument(mimeType: string): boolean {
+    return mimeType === 'application/pdf' || isOfficeDocument(mimeType);
+}
+
+// Helper: Check if file is a video
+function isVideoFile(mimeType: string): boolean {
+    return mimeType.startsWith('video/');
+}
+
+// Helper: Check if file is an audio
+function isAudioFile(mimeType: string): boolean {
+    return mimeType.startsWith('audio/');
+}
+
+// Helper: Extract duration from audio/video buffer
+async function extractMediaDuration(buffer: Buffer, mimeType: string): Promise<number | null> {
+    try {
+        const metadata = await mm.parseBuffer(buffer, mimeType);
+        const duration = metadata.format.duration;
+        if (duration !== undefined && duration > 0) {
+            return Math.round(duration); // Return seconds as integer
+        }
+        return null;
+    } catch (error) {
+        console.error('Failed to extract media duration:', error);
+        return null;
+    }
+}
 
 export async function POST(request: NextRequest) {
+    console.log('=== UPLOAD API CALLED ===');
+    console.log('Content-Type:', request.headers.get('content-type'));
+
     try {
-        const formData = await request.formData();
+        // Get user session
+        const supabase = await createServerSupabaseClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        console.log('User:', user?.email);
+
+        if (!user?.email) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const userEmail = user.email;
+
+        // Get user's tier
+        const { data: userData } = await supabaseAdmin
+            .from('authorized_users')
+            .select('tier')
+            .eq('email', userEmail)
+            .single();
+
+        const tier = userData?.tier || 'free';
+        console.log('User tier:', tier);
+
+        // Check link limit
+        const linkCheck = await canCreateLink(userEmail, tier);
+        if (!linkCheck.allowed) {
+            return NextResponse.json({ error: linkCheck.reason }, { status: 403 });
+        }
+
+        // Parse FormData with detailed error
+        console.log('Parsing FormData...');
+        let formData;
+        try {
+            formData = await request.formData();
+            console.log('FormData parsed successfully');
+        } catch (parseError: any) {
+            console.error('FormData parse error:', parseError);
+            console.error('Error message:', parseError.message);
+            return NextResponse.json({
+                error: `Failed to parse form data: ${parseError.message}`
+            }, { status: 400 });
+        }
+
+        // Log FormData contents
+        console.log('FormData entries:');
+        for (const [key, value] of formData.entries()) {
+            if (value instanceof File) {
+                console.log(`  ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+            } else {
+                console.log(`  ${key}: ${value}`);
+            }
+        }
+
         const file = formData.get('file') as File | null;
         const url = formData.get('url') as string | null;
         const name = formData.get('name') as string | null;
         const customDomainId = formData.get('customDomainId') as string | null;
-        const customSlug = formData.get('slug') as string | null; // NEW: Custom slug from user
+        const customSlug = formData.get('slug') as string | null;
+
+        // Access control settings
+        const requireEmail = formData.get('requireEmail') === 'true';
+        const requireName = formData.get('requireName') === 'true';
+        const allowDownload = formData.get('allowDownload') !== 'false'; // Default true
+        const allowPrint = formData.get('allowPrint') !== 'false'; // Default true
+        const password = formData.get('password') as string | null;
+        const expiresAt = formData.get('expiresAt') as string | null;
 
         // Validate: must have either file or URL
         if (!file && !url) {
             return NextResponse.json({ error: 'No file or URL provided' }, { status: 400 });
+        }
+
+        // Check file size and storage limit
+        if (file) {
+            const fileCheck = await canUploadFile(userEmail, tier, file.size);
+            if (!fileCheck.allowed) {
+                return NextResponse.json({ error: fileCheck.reason }, { status: 403 });
+            }
         }
 
         const fileId = uuidv4();
@@ -60,6 +196,12 @@ export async function POST(request: NextRequest) {
             const fileExtension = file.name.split('.').pop() || '';
             const storedFileName = `${fileId}.${fileExtension}`;
             let pdfPath: string | null = null;
+            let totalPages: number | null = null;
+            let videoDurationSeconds: number | null = null;
+
+            // Get file buffer for processing
+            const fileArrayBuffer = await file.arrayBuffer();
+            const fileBuffer = Buffer.from(fileArrayBuffer);
 
             // Upload to Supabase Storage
             const { data: uploadData, error: uploadError } = await supabaseAdmin
@@ -75,12 +217,26 @@ export async function POST(request: NextRequest) {
                 throw uploadError;
             }
 
-            // Check if Office document and convert to PDF
-            if (isOfficeDocument(file.type)) {
+            // ============================================
+            // EXTRACT PAGE/SLIDE/SHEET COUNT
+            // ============================================
+
+            // 1. Native PDF - extract directly
+            if (file.type === 'application/pdf') {
+                totalPages = await extractPdfPageCount(fileArrayBuffer);
+                console.log(`[PDF] Extracted page count: ${totalPages}`);
+            }
+
+            // 2. Excel files - count sheets
+            else if (isExcelDocument(file.type)) {
+                totalPages = await extractExcelSheetCount(fileArrayBuffer);
+                console.log(`[Excel] Extracted sheet count: ${totalPages}`);
+            }
+
+            // 3. Office documents (Word, PowerPoint) - convert to PDF first, then count
+            else if (isOfficeDocument(file.type)) {
                 try {
                     console.log(`Processing Office document: ${file.name}`);
-                    const arrayBuffer = await file.arrayBuffer();
-                    const fileBuffer = Buffer.from(arrayBuffer);
 
                     const pdfBuffer = await convertOfficeToPDF(fileBuffer, file.name);
 
@@ -101,12 +257,32 @@ export async function POST(request: NextRequest) {
                         } else {
                             console.log(`PDF uploaded successfully: ${pdfFileName}`);
                             pdfPath = pdfFileName;
+
+                            // Extract page count from converted PDF
+                            totalPages = await extractPdfPageCount(pdfBuffer);
+                            console.log(`[Office→PDF] Extracted page count: ${totalPages}`);
                         }
                     }
                 } catch (conversionError) {
                     console.error('PDF conversion process failed:', conversionError);
                     // Continue without PDF path - viewer will fallback to download
                 }
+            }
+
+            // ============================================
+            // EXTRACT MEDIA DURATION (Video/Audio)
+            // ============================================
+
+            // 4. Video files - extract duration
+            else if (isVideoFile(file.type)) {
+                videoDurationSeconds = await extractMediaDuration(fileBuffer, file.type);
+                console.log(`[Video] Extracted duration: ${videoDurationSeconds} seconds`);
+            }
+
+            // 5. Audio files - extract duration
+            else if (isAudioFile(file.type)) {
+                videoDurationSeconds = await extractMediaDuration(fileBuffer, file.type);
+                console.log(`[Audio] Extracted duration: ${videoDurationSeconds} seconds`);
             }
 
             // Save metadata to database
@@ -116,12 +292,22 @@ export async function POST(request: NextRequest) {
                     id: fileId,
                     name: file.name,
                     path: storedFileName,
-                    pdf_path: pdfPath, // Save PDF path if conversion succeeded
+                    pdf_path: pdfPath,
+                    total_pages: totalPages, // Store the extracted page/slide/sheet count
+                    video_duration_seconds: videoDurationSeconds, // Store media duration
                     mime_type: file.type,
                     size: file.size,
                     type: 'file',
                     custom_domain_id: customDomainId || null,
-                    slug: slug
+                    slug: slug,
+                    user_email: userEmail,
+                    // Access control settings
+                    require_email: requireEmail,
+                    require_name: requireName,
+                    allow_download: allowDownload,
+                    allow_print: allowPrint,
+                    password_hash: password ? await bcrypt.hash(password, 10) : null,
+                    expires_at: expiresAt || null
                 });
 
             if (dbError) {
@@ -134,7 +320,8 @@ export async function POST(request: NextRequest) {
                 throw dbError;
             }
 
-            return NextResponse.json({ success: true, fileId, fileName: file.name, slug });
+            console.log(`File uploaded successfully: ${file.name}, ID: ${fileId}, Pages: ${totalPages}, Duration: ${videoDurationSeconds}s`);
+            return NextResponse.json({ success: true, fileId, fileName: file.name, slug, totalPages, videoDurationSeconds });
         }
 
         // Handle external URL
@@ -161,11 +348,18 @@ export async function POST(request: NextRequest) {
                     name: name,
                     type: 'url',
                     external_url: url,
-                    path: '', // Empty string instead of null (NOT NULL constraint)
-                    mime_type: 'text/uri-list', // Use standard MIME type for URLs
-                    size: 0, // 0 instead of null (NOT NULL constraint)
+                    path: '',
+                    mime_type: 'text/uri-list',
+                    size: 0,
                     custom_domain_id: customDomainId || null,
-                    slug: slug
+                    slug: slug,
+                    user_email: userEmail,
+                    require_email: requireEmail,
+                    require_name: requireName,
+                    allow_download: allowDownload,
+                    allow_print: allowPrint,
+                    password_hash: password ? await bcrypt.hash(password, 10) : null,
+                    expires_at: expiresAt || null
                 });
 
             if (dbError) {
@@ -177,9 +371,9 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Upload error:', error);
-        return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+        const errorMessage = error?.message || error?.details || 'Upload failed';
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
-

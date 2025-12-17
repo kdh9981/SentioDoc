@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { promises as dns } from 'dns';
 
@@ -9,13 +9,14 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession();
-        if (!session?.user?.email) {
+        const supabase = await createServerSupabaseClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const userEmail = user.email;
         const { id } = await params;
-        const userEmail = session.user.email;
 
         // Get domain
         const { data: domain } = await supabaseAdmin

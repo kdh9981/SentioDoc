@@ -1,88 +1,108 @@
-import { withAuth } from "next-auth/middleware";
-import { NextRequest, NextResponse } from "next/server";
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
-export default withAuth(
-    function middleware(req) {
-        const hostname = req.headers.get('host') || '';
-        const url = req.nextUrl;
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const hostname = request.headers.get('host') || ''
 
-        // Check if it's the default domain (or localhost/preview)
-        // Adjust these values based on your actual deployment
-        const isDefaultDomain =
-            hostname === 'doc.sentio.ltd' ||
-            hostname.includes('localhost') ||
-            hostname.includes('vercel.app') ||
-            hostname.includes('178.16.139.199'); // VPS IP
+  // Check if it's the default domain (or localhost/preview)
+  const isDefaultDomain =
+    hostname === 'doc.sentio.ltd' ||
+    hostname.includes('localhost') ||
+    hostname.includes('vercel.app') ||
+    hostname.includes('178.16.139.199')
 
-        if (isDefaultDomain) {
-            // Check for root-level slugs: /twitter
-            // Exclude reserved paths
-            const reservedPaths = ['/api', '/view', '/auth', '/_next', '/favicon.ico', '/pricing'];
-            const isReserved = reservedPaths.some(p => url.pathname.startsWith(p)) || url.pathname === '/';
-
-            if (!isReserved) {
-                const slug = url.pathname.slice(1);
-                const newUrl = new URL('/view/custom-domain-handler', req.url);
-                newUrl.searchParams.set('domain', 'DEFAULT');
-                newUrl.searchParams.set('slug', slug);
-                return NextResponse.rewrite(newUrl);
-            }
-        } else {
-            // It's a custom domain!
-            // e.g. go.hey.com/twitter -> hostname=go.hey.com, pathname=/twitter
-
-            // Skip if it's an API call or static asset (should be handled by matcher, but double check)
-            if (url.pathname.startsWith('/api') || url.pathname.startsWith('/_next')) {
-                return NextResponse.next();
-            }
-
-            const slug = url.pathname.slice(1); // remove leading slash
-
-            // If root path on custom domain, do nothing (or redirect to main site)
-            if (url.pathname === '/') {
-                return NextResponse.next();
-            }
-
-            // Rewrite to custom domain handler
-            const newUrl = new URL('/view/custom-domain-handler', req.url);
-            newUrl.searchParams.set('domain', hostname);
-            newUrl.searchParams.set('slug', slug);
-            return NextResponse.rewrite(newUrl);
-        }
-
-        return NextResponse.next();
-    },
-    {
-        callbacks: {
-            authorized: ({ req, token }) => {
-                const path = req.nextUrl.pathname;
-                const hostname = req.headers.get('host') || '';
-
-                // Custom domains are always public
-                const isDefaultDomain =
-                    hostname === 'doc.sentio.ltd' ||
-                    hostname.includes('localhost') ||
-                    hostname.includes('vercel.app') ||
-                    hostname.includes('178.16.139.199');
-
-                if (!isDefaultDomain) {
-                    return true;
-                }
-
-                // On default domain:
-                // Protect root path (Dashboard)
-                if (path === '/') {
-                    return !!token;
-                }
-
-                // Allow everything else (slugs, api, view, auth, etc.)
-                return true;
-            },
-        },
+  // Handle custom domains
+  if (!isDefaultDomain) {
+    // Skip if it's an API call or static asset
+    if (pathname.startsWith('/api') || pathname.startsWith('/_next')) {
+      return NextResponse.next()
     }
-);
+
+    const slug = pathname.slice(1)
+
+    // If root path on custom domain, do nothing
+    if (pathname === '/') {
+      return NextResponse.next()
+    }
+
+    // Rewrite to custom domain handler
+    const newUrl = new URL('/view/custom-domain-handler', request.url)
+    newUrl.searchParams.set('domain', hostname)
+    newUrl.searchParams.set('slug', slug)
+    return NextResponse.rewrite(newUrl)
+  }
+
+  // Reserved paths and static file extensions that should not be treated as slugs
+  const reservedPaths = ['/api', '/view', '/auth', '/_next', '/favicon.ico', '/pricing', '/dashboard', '/s']
+  const staticFileExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.webp', '.css', '.js', '.woff', '.woff2', '.ttf']
+
+  const isStaticFile = staticFileExtensions.some(ext => pathname.endsWith(ext))
+  const isReserved = reservedPaths.some(p => pathname.startsWith(p)) || pathname === '/' || isStaticFile
+
+  if (!isReserved) {
+    const slug = pathname.slice(1)
+    const newUrl = new URL('/view/custom-domain-handler', request.url)
+    newUrl.searchParams.set('domain', 'DEFAULT')
+    newUrl.searchParams.set('slug', slug)
+    return NextResponse.rewrite(newUrl)
+  }
+
+  // Public paths that don't need auth
+  const publicPaths = ['/', '/auth', '/view', '/api', '/_next', '/favicon.ico', '/pricing']
+  const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
+
+  if (isPublicPath) {
+    return NextResponse.next()
+  }
+
+  // Create Supabase client for auth check
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({ name, value, ...options })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          response.cookies.set({ name, value, ...options })
+        },
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({ name, value: '', ...options })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          response.cookies.set({ name, value: '', ...options })
+        },
+      },
+    }
+  )
+
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // Redirect to signin if no session on protected routes
+  if (!session && pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/auth/signin', request.url))
+  }
+
+  return response
+}
 
 export const config = {
-    // Match everything except static files and images
-    matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
-};
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+}

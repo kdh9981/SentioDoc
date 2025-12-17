@@ -13,15 +13,17 @@ const PricingPage = () => {
       price: 0,
       yearlyPrice: 0,
       description: 'Perfect for getting started',
+      includesFrom: null,
       features: [
-        '10 links',
+        '10 active links',
+        '5,000 views + clicks/month',
         'Basic analytics (views, visitors, timestamps)',
         'Email capture',
-        '50MB storage',
+        '100MB file storage',
         '14-day analytics history'
       ],
-      cta: 'Get Started',
-      ctaLink: '/auth/signin',
+      cta: 'Get started',
+      ctaLink: '/auth/signup',
       highlighted: false
     },
     {
@@ -29,17 +31,18 @@ const PricingPage = () => {
       price: 9,
       yearlyPrice: 7,
       description: 'For active creators & founders',
+      includesFrom: 'Free',
       features: [
-        '1,000 links',
+        'Total 500 active links',
+        'Total 50,000 views + clicks/month',
         'Full analytics (device, country, traffic source)',
         '1 custom domain',
-        'Remove LinkLens branding',
-        'Real-time notifications',
-        '10GB storage',
-        '1-year analytics history'
+        'Custom logo, no watermark',
+        'Total 10GB file storage',
+        'Total 1-year analytics history'
       ],
-      cta: 'Start Free Trial',
-      ctaLink: '/auth/signin?plan=starter',
+      cta: 'Start free trial',
+      ctaLink: '/auth/signup?plan=starter',
       highlighted: true
     },
     {
@@ -47,34 +50,44 @@ const PricingPage = () => {
       price: 19,
       yearlyPrice: 15,
       description: 'For power users & teams',
+      includesFrom: 'Starter',
       features: [
-        'Unlimited links',
+        'Total 5,000 active links',
+        'Total 100,000 views + clicks/month',
         'Advanced analytics (city, page-by-page, completion rate)',
-        'Unlimited custom domains',
-        'Remove LinkLens branding',
+        '10 custom domains',
         'Export data (CSV)',
-        '50GB storage',
+        'Total 50GB file storage',
         'Lifetime analytics history',
         'Priority support'
       ],
-      cta: 'Start Free Trial',
-      ctaLink: '/auth/signin?plan=pro',
+      cta: 'Start free trial',
+      ctaLink: '/auth/signup?plan=pro',
       highlighted: false
     }
   ];
 
   const featureComparison = [
     {
-      category: 'Links',
+      category: 'Usage limits',
       features: [
-        { name: 'Links', free: '10', starter: '1,000', pro: 'Unlimited' },
-        { name: 'Link editing', free: true, starter: true, pro: true },
-        { name: 'QR code generation', free: false, starter: true, pro: true },
-        { name: 'Link expiration setup', free: false, starter: true, pro: true },
+        { name: 'Active links', free: '10', starter: '500', pro: '5,000' },
+        { name: 'Views + clicks tracked/month', free: '5,000', starter: '50,000', pro: '100,000' },
+        { name: 'Custom domains', free: '0', starter: '1', pro: '10' },
+        { name: 'File storage', free: '100MB', starter: '10GB', pro: '50GB' },
       ]
     },
     {
-      category: 'Analytics — Basic Metrics',
+      category: 'Link features',
+      features: [
+        { name: 'Link editing', free: true, starter: true, pro: true },
+        { name: 'QR code generation', free: false, starter: true, pro: true },
+        { name: 'Link expiration', free: false, starter: true, pro: true },
+        { name: 'Password protection', free: false, starter: true, pro: true },
+      ]
+    },
+    {
+      category: 'Analytics — Basic metrics',
       features: [
         { name: 'Total views', free: true, starter: true, pro: true },
         { name: 'Unique visitors', free: true, starter: true, pro: true },
@@ -83,13 +96,14 @@ const PricingPage = () => {
       ]
     },
     {
-      category: 'Analytics — Time & Engagement',
+      category: 'Analytics — Time & engagement',
       features: [
         { name: 'Average view time', free: false, starter: true, pro: true },
+        { name: 'Completion rate', free: false, starter: false, pro: true },
       ]
     },
     {
-      category: 'Analytics — Device & Technical',
+      category: 'Analytics — Device & technical',
       features: [
         { name: 'Device type', free: false, starter: true, pro: true },
         { name: 'Operating system', free: false, starter: true, pro: true },
@@ -104,56 +118,32 @@ const PricingPage = () => {
       ]
     },
     {
-      category: 'Analytics — Traffic Source',
+      category: 'Analytics — Traffic & behavior',
       features: [
         { name: 'Traffic source', free: false, starter: true, pro: true },
-      ]
-    },
-    {
-      category: 'Analytics — Alerts',
-      features: [
-        { name: 'Real-time notifications', free: false, starter: true, pro: true },
-      ]
-    },
-    {
-      category: 'Analytics — Deep Engagement (Pro)',
-      features: [
-        { name: 'Page-by-page analytics', free: false, starter: false, pro: true },
-        { name: 'Completion rate', free: false, starter: false, pro: true },
         { name: 'Return visit tracking', free: false, starter: false, pro: true },
       ]
     },
     {
-      category: 'Analytics — Data Export',
+      category: 'Analytics — Document insights (Pro)',
       features: [
-        { name: 'Export data (CSV)', free: false, starter: false, pro: true },
+        { name: 'Page-by-page analytics', free: false, starter: false, pro: true },
+        { name: 'Time per page/slide', free: false, starter: false, pro: true },
+        { name: 'Drop-off analysis', free: false, starter: false, pro: true },
       ]
     },
     {
-      category: 'Analytics — History',
+      category: 'Analytics — History & export',
       features: [
         { name: 'Analytics history', free: '14 days', starter: '1 year', pro: 'Lifetime' },
+        { name: 'Export data (CSV)', free: false, starter: false, pro: true },
       ]
     },
     {
       category: 'Branding',
       features: [
-        { name: 'Custom domains', free: false, starter: '1', pro: 'Unlimited' },
-        { name: 'LinkLens branding', free: 'Shown', starter: 'Removed', pro: 'Removed' },
-      ]
-    },
-    {
-      category: 'Storage',
-      features: [
-        { name: 'Total file storage', free: '50MB', starter: '10GB', pro: '50GB' },
-        { name: 'Max file size', free: '50MB', starter: '50MB', pro: '100MB' },
-      ]
-    },
-    {
-      category: 'Security',
-      features: [
-        { name: 'Password protection', free: false, starter: true, pro: true },
-        { name: 'Revoke link access', free: true, starter: true, pro: true },
+        { name: 'Custom logo', free: false, starter: true, pro: true },
+        { name: 'No watermark', free: false, starter: true, pro: true },
       ]
     },
     {
@@ -172,7 +162,7 @@ const PricingPage = () => {
         <X size={20} style={{ color: '#d1d5db' }} />
       );
     }
-    return <span style={{ color: value === 'Shown' ? '#f97316' : '#22c55e', fontWeight: 500 }}>{value}</span>;
+    return <span style={{ color: value === '0' ? '#d1d5db' : '#22c55e', fontWeight: 500 }}>{value}</span>;
   };
 
   return (
@@ -288,7 +278,7 @@ const PricingPage = () => {
                     fontSize: '12px',
                     fontWeight: 700
                   }}>
-                    MOST POPULAR
+                    Most popular
                   </div>
                 )}
 
@@ -329,6 +319,18 @@ const PricingPage = () => {
                   gap: '12px',
                   marginBottom: '32px'
                 }}>
+                  {plan.includesFrom && (
+                    <div style={{
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: '#6366f1',
+                      marginBottom: '4px',
+                      paddingBottom: '8px',
+                      borderBottom: '1px solid #e2e8f0'
+                    }}>
+                      Everything in {plan.includesFrom}, plus:
+                    </div>
+                  )}
                   {plan.features.map((feature, idx) => (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <Check size={18} style={{ color: '#22c55e', flexShrink: 0 }} />
@@ -434,7 +436,6 @@ const PricingPage = () => {
                       fontWeight: 700,
                       color: '#0f172a',
                       fontSize: '14px',
-                      textTransform: 'uppercase',
                       letterSpacing: '0.05em'
                     }}>
                       {section.category}
@@ -524,7 +525,7 @@ const PricingPage = () => {
                 fontWeight: 600
               }}
             >
-              Contact Us
+              Contact us
             </a>
           </div>
         </section>

@@ -17,7 +17,7 @@ function ErrorContent() {
 
     return (
         <div style={{ textAlign: 'center', padding: '40px', maxWidth: '600px' }}>
-            <h1 style={{ fontSize: '24px', marginBottom: '16px', color: 'var(--error)' }}>Authentication Error</h1>
+            <h1 style={{ fontSize: '24px', marginBottom: '16px', color: 'var(--error)' }}>Authentication error</h1>
             <p style={{ marginBottom: '24px', color: 'var(--text-secondary)' }}>{errorMessage}</p>
             <Link href="/api/auth/signin" style={{
                 display: 'inline-block',
@@ -27,7 +27,7 @@ function ErrorContent() {
                 borderRadius: '6px',
                 textDecoration: 'none'
             }}>
-                Try Again
+                Try again
             </Link>
         </div>
     );

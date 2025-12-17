@@ -104,7 +104,7 @@ const MockDashboard: React.FC = () => {
           {/* Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
             <div style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)', padding: '16px', borderRadius: '12px', border: '1px solid #334155' }}>
-              <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}>Total Views</div>
+              <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}>Total views</div>
               <div style={{ color: 'white', fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>12,847</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'rgba(34, 197, 94, 0.1)', width: 'fit-content', padding: '2px 8px', borderRadius: '9999px' }}>
                 <TrendingUp size={12} style={{ color: '#22c55e' }} />
@@ -112,7 +112,7 @@ const MockDashboard: React.FC = () => {
               </div>
             </div>
             <div style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)', padding: '16px', borderRadius: '12px', border: '1px solid #334155' }}>
-              <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}>Unique Viewers</div>
+              <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}>Unique viewers</div>
               <div style={{ color: 'white', fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>3,291</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'rgba(34, 197, 94, 0.1)', width: 'fit-content', padding: '2px 8px', borderRadius: '9999px' }}>
                 <TrendingUp size={12} style={{ color: '#22c55e' }} />
@@ -120,7 +120,7 @@ const MockDashboard: React.FC = () => {
               </div>
             </div>
             <div style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)', padding: '16px', borderRadius: '12px', border: '1px solid #334155' }}>
-              <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}>Avg. View Time</div>
+              <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}>Avg. view time</div>
               <div style={{ color: 'white', fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>4m 32s</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'rgba(34, 197, 94, 0.1)', width: 'fit-content', padding: '2px 8px', borderRadius: '9999px' }}>
                 <TrendingUp size={12} style={{ color: '#22c55e' }} />
@@ -131,7 +131,7 @@ const MockDashboard: React.FC = () => {
 
           {/* Activity */}
           <div style={{ backgroundColor: 'rgba(30, 41, 59, 0.3)', borderRadius: '12px', border: '1px solid #334155', padding: '16px' }}>
-            <div style={{ color: '#94a3b8', fontSize: '14px', fontWeight: 500, marginBottom: '16px' }}>Recent Activity</div>
+            <div style={{ color: '#94a3b8', fontSize: '14px', fontWeight: 500, marginBottom: '16px' }}>Recent activity</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

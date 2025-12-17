@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import LinkConfigModal from './LinkConfigModal';
 
-type UploadMode = 'file' | 'url';
+type UploadMode = 'file' | 'site';
 
 interface LinkResult {
     fileId: string;
@@ -11,12 +11,22 @@ interface LinkResult {
     url: string;
 }
 
-export default function FileUpload({ onUploadSuccess }: { onUploadSuccess: () => void }) {
-    const [mode, setMode] = useState<UploadMode>('file');
+interface FileUploadProps {
+    onUploadSuccess: () => void;
+    defaultTab?: 'file' | 'site';
+}
+
+export default function FileUpload({ onUploadSuccess, defaultTab = 'file' }: FileUploadProps) {
+    const [mode, setMode] = useState<UploadMode>(defaultTab);
     const [isDragging, setIsDragging] = useState(false);
     const [externalUrl, setExternalUrl] = useState('');
     const [urlName, setUrlName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Update mode when defaultTab changes
+    useEffect(() => {
+        setMode(defaultTab);
+    }, [defaultTab]);
 
     // Modal state
     const [showConfigModal, setShowConfigModal] = useState(false);
@@ -51,7 +61,12 @@ export default function FileUpload({ onUploadSuccess }: { onUploadSuccess: () =>
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             openConfigModal(e.target.files[0]);
+            e.target.value = '';
         }
+    };
+
+    const handleUploadZoneClick = () => {
+        fileInputRef.current?.click();
     };
 
     const openConfigModal = (file: File) => {
@@ -83,14 +98,9 @@ export default function FileUpload({ onUploadSuccess }: { onUploadSuccess: () =>
         setCreatedLink(result);
         setShowSuccess(true);
 
-        // Reset form
         setExternalUrl('');
         setUrlName('');
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
 
-        // Auto-hide success after 5 seconds
         setTimeout(() => {
             setShowSuccess(false);
             onUploadSuccess();
@@ -114,186 +124,118 @@ export default function FileUpload({ onUploadSuccess }: { onUploadSuccess: () =>
         <div>
             {/* Success Message */}
             {showSuccess && createdLink && (
-                <div style={{
-                    padding: '16px',
-                    background: 'linear-gradient(135deg, #22c55e 0%, #10b981 100%)',
-                    borderRadius: '8px',
-                    marginBottom: '20px',
-                    color: 'white',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px'
-                }}>
-                    <div style={{ fontSize: '16px', fontWeight: '600' }}>
-                        ✅ Link created successfully!
-                    </div>
-                    <div style={{
-                        background: 'rgba(255,255,255,0.2)',
-                        padding: '12px',
-                        borderRadius: '6px',
-                        wordBreak: 'break-all',
-                        fontSize: '14px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: '12px'
-                    }}>
-                        <span>{createdLink.url}</span>
+                <div className="p-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg mb-5 text-white">
+                    <p className="text-base font-semibold mb-3">
+                        Link created successfully!
+                    </p>
+                    <div className="bg-white/20 p-3 rounded-md flex justify-between items-center gap-3">
+                        <span className="text-sm break-all">{createdLink.url}</span>
                         <button
                             onClick={() => copyLink(createdLink.url)}
-                            style={{
-                                background: 'white',
-                                color: '#22c55e',
-                                border: 'none',
-                                padding: '6px 12px',
-                                borderRadius: '4px',
-                                fontSize: '12px',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                flexShrink: 0
-                            }}
+                            className="bg-white text-green-600 px-3 py-1.5 rounded text-xs font-semibold hover:bg-green-50 transition-colors flex-shrink-0"
                         >
-                            Copy Link
+                            Copy link
                         </button>
                     </div>
                 </div>
             )}
 
             {/* Tabs */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+            <div className="flex gap-2 mb-4 border-b border-slate-200">
                 <button
+                    type="button"
                     onClick={() => setMode('file')}
-                    style={{
-                        padding: '12px 24px',
-                        background: 'none',
-                        border: 'none',
-                        borderBottom: mode === 'file' ? '2px solid var(--primary)' : '2px solid transparent',
-                        color: mode === 'file' ? 'var(--primary)' : 'var(--text-secondary)',
-                        fontWeight: mode === 'file' ? '600' : '400',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                    }}
+                    className={`px-6 py-3 border-b-2 transition-all flex items-center gap-2 ${
+                        mode === 'file'
+                            ? 'border-blue-600 text-blue-600 font-semibold'
+                            : 'border-transparent text-slate-600 hover:text-slate-800'
+                    }`}
                 >
-                    📄 File Upload
+                    <span className="material-symbols-outlined text-xl">upload_file</span>
+                    Upload file
                 </button>
                 <button
-                    onClick={() => setMode('url')}
-                    style={{
-                        padding: '12px 24px',
-                        background: 'none',
-                        border: 'none',
-                        borderBottom: mode === 'url' ? '2px solid var(--primary)' : '2px solid transparent',
-                        color: mode === 'url' ? 'var(--primary)' : 'var(--text-secondary)',
-                        fontWeight: mode === 'url' ? '600' : '400',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                    }}
+                    type="button"
+                    onClick={() => setMode('site')}
+                    className={`px-6 py-3 border-b-2 transition-all flex items-center gap-2 ${
+                        mode === 'site'
+                            ? 'border-blue-600 text-blue-600 font-semibold'
+                            : 'border-transparent text-slate-600 hover:text-slate-800'
+                    }`}
                 >
-                    🔗 External Link
+                    <span className="material-symbols-outlined text-xl">link</span>
+                    Track site
                 </button>
             </div>
 
             {/* File Upload Mode */}
             {mode === 'file' && (
-                <div
-                    className={`upload-zone ${isDragging ? 'dragging' : ''}`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    style={{
-                        border: '2px dashed var(--border)',
-                        borderRadius: 'var(--radius)',
-                        padding: '60px 40px',
-                        textAlign: 'center',
-                        cursor: 'pointer',
-                        backgroundColor: isDragging ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-                        borderColor: isDragging ? 'var(--primary)' : 'var(--border)',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        minHeight: '200px'
-                    }}
-                >
+                <>
                     <input
                         type="file"
                         ref={fileInputRef}
                         onChange={handleFileSelect}
                         style={{ display: 'none' }}
                     />
-                    <div className="animate-fade-in">
-                        <div style={{
-                            fontSize: '48px',
-                            marginBottom: '16px',
-                            color: isDragging ? 'var(--primary)' : 'var(--text-secondary)',
-                            transition: 'color 0.2s'
-                        }}>
-                            📄
+                    <div
+                        onClick={handleUploadZoneClick}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        className={`border-2 border-dashed rounded-xl p-16 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[200px] ${
+                            isDragging
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-slate-300 bg-white hover:border-blue-400 hover:bg-blue-50/50'
+                        }`}
+                    >
+                        <div className={`text-5xl mb-4 transition-colors ${isDragging ? 'text-blue-500' : 'text-slate-400'}`}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '48px' }}>upload_file</span>
                         </div>
-                        <p style={{ fontSize: '18px', fontWeight: 500, marginBottom: '8px', color: 'var(--text-primary)' }}>
+                        <p className="text-lg font-medium text-slate-800 mb-2">
                             {isDragging ? 'Drop file here' : 'Click or drag file to upload'}
                         </p>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+                        <p className="text-slate-600 text-sm">
                             Supports PDF, Office docs, images, video, audio, code, CSV, and more
                         </p>
                     </div>
-                </div>
+                </>
             )}
 
-            {/* URL Input Mode */}
-            {mode === 'url' && (
-                <form onSubmit={handleUrlSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Track Site Mode */}
+            {mode === 'site' && (
+                <form onSubmit={handleUrlSubmit} className="flex flex-col gap-4">
                     <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: 'var(--text-primary)' }}>
-                            Link Name
+                        <label className="block mb-2 text-sm font-medium text-slate-800">
+                            Link name
                         </label>
                         <input
                             type="text"
                             value={urlName}
                             onChange={(e) => setUrlName(e.target.value)}
-                            placeholder="e.g., YouTube Demo Video"
-                            style={{
-                                width: '100%',
-                                padding: '12px',
-                                backgroundColor: 'var(--background)',
-                                border: '1px solid var(--border)',
-                                borderRadius: 'var(--radius)',
-                                color: 'var(--text-primary)',
-                                fontSize: '14px'
-                            }}
+                            placeholder="e.g., Product Demo Video"
+                            className="w-full p-3 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
                     <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: 'var(--text-primary)' }}>
-                            External URL
+                        <label className="block mb-2 text-sm font-medium text-slate-800">
+                            Website URL
                         </label>
                         <input
                             type="url"
                             value={externalUrl}
                             onChange={(e) => setExternalUrl(e.target.value)}
                             placeholder="https://youtube.com/watch?v=..."
-                            style={{
-                                width: '100%',
-                                padding: '12px',
-                                backgroundColor: 'var(--background)',
-                                border: '1px solid var(--border)',
-                                borderRadius: 'var(--radius)',
-                                color: 'var(--text-primary)',
-                                fontSize: '14px'
-                            }}
+                            className="w-full p-3 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
-                        <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                            Enter any external URL (YouTube, Google Drive, website, etc.)
+                        <p className="mt-2 text-xs text-slate-600">
+                            YouTube, Vimeo, Google Drive, Notion, or any website
                         </p>
                     </div>
                     <button
                         type="submit"
-                        className="btn btn-primary"
-                        style={{ width: '100%', marginTop: '8px' }}
+                        className="w-full mt-2 px-5 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
                     >
-                        Configure Link →
+                        Configure link
                     </button>
                 </form>
             )}

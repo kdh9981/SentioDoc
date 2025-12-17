@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Link as LinkIcon } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -35,22 +35,7 @@ const Navbar: React.FC = () => {
         justifyContent: 'space-between'
       }}>
         {/* Logo */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#6366f1',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <LinkIcon size={18} style={{ color: 'white' }} />
-          </div>
-          <span style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
-            Link<span style={{ color: '#6366f1' }}>Lens</span>
-          </span>
-        </Link>
+        <Logo variant="full" size="md" linkTo="/" />
 
         {/* Desktop Nav */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
@@ -58,28 +43,28 @@ const Navbar: React.FC = () => {
             <Link
               href="/#how-it-works"
               style={{
-                color: '#64748b',
+                color: '#5F6368',
                 textDecoration: 'none',
                 fontSize: '14px',
                 fontWeight: 500,
                 transition: 'color 0.2s ease'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#0f172a'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#202124'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#5F6368'}
             >
-              How It Works
+              How it works
             </Link>
             <Link
               href="/pricing"
               style={{
-                color: '#64748b',
+                color: '#5F6368',
                 textDecoration: 'none',
                 fontSize: '14px',
                 fontWeight: 500,
                 transition: 'color 0.2s ease'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#0f172a'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#202124'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#5F6368'}
             >
               Pricing
             </Link>
@@ -89,19 +74,19 @@ const Navbar: React.FC = () => {
             <Link
               href="/auth/signin"
               style={{
-                color: '#64748b',
+                color: '#5F6368',
                 textDecoration: 'none',
                 fontSize: '14px',
                 fontWeight: 500,
                 transition: 'color 0.2s ease'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#0f172a'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#202124'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#5F6368'}
             >
-              Sign In
+              Sign in
             </Link>
             <Link
-              href="/auth/signin"
+              href="/auth/signup"
               style={{
                 backgroundColor: '#6366f1',
                 color: 'white',
@@ -115,7 +100,7 @@ const Navbar: React.FC = () => {
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6366f1'}
             >
-              Get Started
+              Get started
             </Link>
           </div>
         </div>

@@ -11,30 +11,53 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // 1. Find custom domain ID
-        const { data: customDomain } = await supabaseAdmin
-            .from('custom_domains')
-            .select('id')
-            .eq('full_domain', domain)
-            .single();
+        let file = null;
 
-        if (!customDomain) {
-            return NextResponse.json({ error: 'Domain not found' }, { status: 404 });
+        if (domain === 'DEFAULT') {
+            // For default domain (doc.sentio.ltd), look up files by slug only
+            // These files either have no custom_domain_id or have the default domain
+            const { data } = await supabaseAdmin
+                .from('files')
+                .select('*')
+                .eq('slug', slug)
+                .is('deleted_at', null)
+                .single();
+
+            file = data;
+
+            // If not found by slug, try by file ID (backward compatibility)
+            if (!file) {
+                const { data: fileById } = await supabaseAdmin
+                    .from('files')
+                    .select('*')
+                    .eq('id', slug)
+                    .is('deleted_at', null)
+                    .single();
+                file = fileById;
+            }
+        } else {
+            // For custom domains, find the domain first
+            const { data: customDomain } = await supabaseAdmin
+                .from('custom_domains')
+                .select('id')
+                .eq('full_domain', domain)
+                .single();
+
+            if (!customDomain) {
+                return NextResponse.json({ error: 'Domain not found' }, { status: 404 });
+            }
+
+            // Find file by slug and custom_domain_id
+            const { data } = await supabaseAdmin
+                .from('files')
+                .select('*')
+                .eq('slug', slug)
+                .eq('custom_domain_id', customDomain.id)
+                .is('deleted_at', null)
+                .single();
+
+            file = data;
         }
-
-        // 2. Find file by slug and custom_domain_id
-        // Note: We check for slug match OR name match (if we use name as slug fallback)
-        // But for now let's assume slug is populated.
-        // Actually, we should check if 'slug' column exists or if we use 'name'.
-        // Based on previous work, we added 'slug' column.
-
-        const { data: file } = await supabaseAdmin
-            .from('files')
-            .select('*')
-            .eq('slug', slug)
-            .eq('custom_domain_id', customDomain.id)
-            .is('deleted_at', null) // Only active files
-            .single();
 
         if (!file) {
             return NextResponse.json({ error: 'File not found' }, { status: 404 });

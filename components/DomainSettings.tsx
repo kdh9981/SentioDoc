@@ -94,13 +94,18 @@ export default function DomainSettings() {
     };
 
     if (loading) {
-        return <div style={{ padding: '40px', textAlign: 'center' }}>Loading domains...</div>;
+        return (
+            <div className="max-w-4xl mx-auto p-6">
+                <div style={{ padding: '40px', textAlign: 'center' }}>Loading domains...</div>
+            </div>
+        );
     }
 
     // Free tier - show upgrade prompt
     if (tier === 'free') {
         return (
-            <div className="card" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+            <div className="p-6 max-w-4xl mx-auto">
+                <div className="bg-white rounded-xl border border-slate-200 p-6 text-center">
                 <div style={{ fontSize: '48px', marginBottom: '16px' }}>🌐</div>
                 <h2 style={{ marginBottom: '16px' }}>Custom Domains</h2>
                 <div style={{
@@ -132,17 +137,19 @@ export default function DomainSettings() {
                 <button className="btn btn-primary" style={{ fontSize: '16px', padding: '12px 32px' }}>
                     Upgrade to Pro →
                 </button>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div className="p-6 max-w-4xl mx-auto">
+            <div className="bg-white rounded-xl border border-slate-200 p-6">
             <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h2 style={{ marginBottom: '8px' }}>Custom Domains</h2>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                        {limits.current} of {limits.max} domains used • {tier.toUpperCase()} tier
+                        {limits.current} of {limits.max} domains used • {tier.charAt(0).toUpperCase() + tier.slice(1)} tier
                     </p>
                 </div>
                 {limits.current < limits.max && (
@@ -275,6 +282,7 @@ export default function DomainSettings() {
                     }}
                 />
             )}
+            </div>
         </div>
     );
 }

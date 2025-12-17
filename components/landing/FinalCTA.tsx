@@ -47,7 +47,7 @@ const FinalCTA: React.FC = () => {
               boxShadow: '0 4px 14px rgba(255,255,255,0.39)'
             }}
           >
-            Get Started Free
+            Get started free
           </Link>
         </div>
 

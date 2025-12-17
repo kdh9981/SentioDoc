@@ -1,7 +1,7 @@
 'use client'
 import React from 'react';
 import Link from 'next/link';
-import { Link as LinkIcon } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 const Footer: React.FC = () => {
   return (
@@ -19,23 +19,10 @@ const Footer: React.FC = () => {
         }}>
           {/* Brand */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#6366f1',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <LinkIcon size={18} style={{ color: 'white' }} />
-              </div>
-              <span style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
-                Link<span style={{ color: '#6366f1' }}>Lens</span>
-              </span>
+            <div style={{ marginBottom: '16px' }}>
+              <Logo variant="full" size="md" linkTo="/" />
             </div>
-            <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.6, maxWidth: '280px' }}>
+            <p style={{ color: '#5F6368', fontSize: '14px', lineHeight: 1.6, maxWidth: '280px' }}>
               Track who views your documents, videos, or any link. Know who's serious with branded links and real-time analytics.
             </p>
           </div>
@@ -43,45 +30,43 @@ const Footer: React.FC = () => {
           {/* Product - Following homepage section order */}
           <div>
             <h4 style={{
-              fontWeight: 600,
-              color: '#0f172a',
+              fontWeight: 500,
+              color: '#202124',
               marginBottom: '16px',
-              fontSize: '14px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontSize: '13px'
             }}>
               Product
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <Link
                 href="/#who-is-this-for"
-                style={{ color: '#64748b', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s ease' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#6366f1'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
+                style={{ color: '#5F6368', textDecoration: 'none', fontSize: '13px', transition: 'color 0.2s ease' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#202124'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#5F6368'}
               >
-                Who Is This For
+                Who is this for
               </Link>
               <Link
                 href="/#how-it-works"
-                style={{ color: '#64748b', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s ease' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#6366f1'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
+                style={{ color: '#5F6368', textDecoration: 'none', fontSize: '13px', transition: 'color 0.2s ease' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#202124'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#5F6368'}
               >
-                How It Works
+                How it works
               </Link>
               <Link
                 href="/#why-linklens"
-                style={{ color: '#64748b', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s ease' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#6366f1'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
+                style={{ color: '#5F6368', textDecoration: 'none', fontSize: '13px', transition: 'color 0.2s ease' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#202124'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#5F6368'}
               >
-                Why LinkLens
+                Why <span style={{ fontWeight: 600 }}><span style={{ color: '#1e293b' }}>Link</span><span style={{ color: '#7c8ce0' }}>Lens</span></span>
               </Link>
               <Link
                 href="/pricing"
-                style={{ color: '#64748b', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s ease' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#6366f1'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
+                style={{ color: '#5F6368', textDecoration: 'none', fontSize: '13px', transition: 'color 0.2s ease' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#202124'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#5F6368'}
               >
                 Pricing
               </Link>
@@ -91,21 +76,19 @@ const Footer: React.FC = () => {
           {/* Company */}
           <div>
             <h4 style={{
-              fontWeight: 600,
-              color: '#0f172a',
+              fontWeight: 500,
+              color: '#202124',
               marginBottom: '16px',
-              fontSize: '14px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontSize: '13px'
             }}>
               Company
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <a
                 href="mailto:support@linklens.tech"
-                style={{ color: '#64748b', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s ease' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#6366f1'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
+                style={{ color: '#5F6368', textDecoration: 'none', fontSize: '13px', transition: 'color 0.2s ease' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#202124'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#5F6368'}
               >
                 Contact
               </a>
@@ -115,31 +98,29 @@ const Footer: React.FC = () => {
           {/* Legal */}
           <div>
             <h4 style={{
-              fontWeight: 600,
-              color: '#0f172a',
+              fontWeight: 500,
+              color: '#202124',
               marginBottom: '16px',
-              fontSize: '14px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontSize: '13px'
             }}>
               Legal
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <Link
                 href="/privacy"
-                style={{ color: '#64748b', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s ease' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#6366f1'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
+                style={{ color: '#5F6368', textDecoration: 'none', fontSize: '13px', transition: 'color 0.2s ease' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#202124'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#5F6368'}
               >
-                Privacy Policy
+                Privacy policy
               </Link>
               <Link
                 href="/terms"
-                style={{ color: '#64748b', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s ease' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#6366f1'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
+                style={{ color: '#5F6368', textDecoration: 'none', fontSize: '13px', transition: 'color 0.2s ease' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#202124'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#5F6368'}
               >
-                Terms of Service
+                Terms of service
               </Link>
             </div>
           </div>
@@ -154,7 +135,7 @@ const Footer: React.FC = () => {
           alignItems: 'center'
         }}>
           <p style={{ color: '#94a3b8', fontSize: '14px' }}>
-            © 2025 LinkLens. All rights reserved.
+            © 2025 <span style={{ fontWeight: 600 }}><span style={{ color: '#1e293b' }}>Link</span><span style={{ color: '#7c8ce0' }}>Lens</span></span>. All rights reserved.
           </p>
           <div style={{ display: 'flex', gap: '16px' }}>
             {/* X (Twitter) */}

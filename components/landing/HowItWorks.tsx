@@ -121,7 +121,7 @@ const HowItWorks: React.FC = () => {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '64px' }}>
           <h2 style={{ fontSize: '48px', fontWeight: 800, color: '#0f172a', marginBottom: '16px' }}>
-            How LinkLens Works
+            How <span style={{ fontWeight: 800 }}><span style={{ color: '#1e293b' }}>Link</span><span style={{ color: '#7c8ce0' }}>Lens</span></span> works
           </h2>
           <p style={{ fontSize: '18px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>
             Start tracking in three simple steps. We use AI to optimize your links for better reach.
@@ -171,8 +171,8 @@ const HowItWorks: React.FC = () => {
             </div>
 
             {/* Title & Description */}
-            <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', textAlign: 'center', flexShrink: 0 }}>
-              {inputMode === 'upload' ? 'Upload File' : 'Paste Link'}
+            <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#0f172a', marginBottom: '8px', textAlign: 'center', flexShrink: 0 }}>
+              {inputMode === 'upload' ? 'Upload file' : 'Paste link'}
             </h3>
             <p style={{ fontSize: '14px', color: '#64748b', textAlign: 'center', marginBottom: '20px', lineHeight: 1.5, flexShrink: 0 }}>
               {inputMode === 'upload'
@@ -201,7 +201,7 @@ const HowItWorks: React.FC = () => {
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      <UploadCloud size={16} /> Upload File
+                      <UploadCloud size={16} /> Upload file
                     </button>
                     <button
                       onClick={() => { setInputMode('link'); clearFile(); }}
@@ -214,7 +214,7 @@ const HowItWorks: React.FC = () => {
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      <LinkIcon size={16} /> Paste Link
+                      <LinkIcon size={16} /> Paste link
                     </button>
                   </div>
 
@@ -279,7 +279,7 @@ const HowItWorks: React.FC = () => {
                           {/* Content Title Input */}
                           <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: '6px' }}>
-                              Content Title (for Slug generation)
+                              Content title (for slug generation)
                             </label>
                             <input
                               type="text"
@@ -336,7 +336,7 @@ const HowItWorks: React.FC = () => {
                       {/* Slug Input for Link */}
                       <div style={{ flex: 1 }}>
                         <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: '4px' }}>
-                          Custom Slug (for your branded link)
+                          Custom slug (for your branded link)
                         </label>
                         <input
                           type="text"
@@ -369,7 +369,7 @@ const HowItWorks: React.FC = () => {
                       flexShrink: 0
                     }}
                   >
-                    Next Step <ArrowRight size={18} />
+                    Next step <ArrowRight size={18} />
                   </button>
                 </>
               ) : (
@@ -379,7 +379,7 @@ const HowItWorks: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <FileText size={24} style={{ color: '#6366f1' }} />
                       <div style={{ overflow: 'hidden' }}>
-                        <p style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, margin: 0 }}>FILE</p>
+                        <p style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600, margin: 0 }}>File</p>
                         <p style={{ fontSize: '14px', color: '#0f172a', fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
                           {(inputMode === 'upload' ? contentTitle || uploadedFile?.name : linkSlugTitle)?.substring(0, 30) || ''}
                         </p>
@@ -426,8 +426,8 @@ const HowItWorks: React.FC = () => {
               <LinkIcon style={{ width: '32px', height: '32px', color: currentStep === 2 ? '#6366f1' : '#94a3b8' }} />
             </div>
 
-            <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', textAlign: 'center', flexShrink: 0 }}>
-              Get Branded Link
+            <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#0f172a', marginBottom: '8px', textAlign: 'center', flexShrink: 0 }}>
+              Get branded link
             </h3>
             <p style={{ fontSize: '14px', color: '#64748b', textAlign: 'center', marginBottom: '24px', lineHeight: 1.5, flexShrink: 0 }}>
               Our AI suggests memorable slugs based on your content category.
@@ -448,8 +448,8 @@ const HowItWorks: React.FC = () => {
               ) : currentStep === 2 ? (
                 /* Active State */
                 <>
-                  <p style={{ fontSize: '11px', color: '#64748b', textAlign: 'center', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '10px', flexShrink: 0 }}>
-                    AI Suggestions (Personal)
+                  <p style={{ fontSize: '11px', color: '#64748b', textAlign: 'center', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '10px', flexShrink: 0 }}>
+                    AI suggestions (personal)
                   </p>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', flex: 1 }}>
@@ -492,7 +492,7 @@ const HowItWorks: React.FC = () => {
                       marginTop: 'auto'
                     }}
                   >
-                    Create Link
+                    Create link
                   </button>
                 </>
               ) : (
@@ -541,8 +541,8 @@ const HowItWorks: React.FC = () => {
               <BarChart3 style={{ width: '32px', height: '32px', color: currentStep === 3 ? '#6366f1' : '#94a3b8' }} />
             </div>
 
-            <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', marginBottom: '8px', textAlign: 'center', flexShrink: 0 }}>
-              See Who's Clicking
+            <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#0f172a', marginBottom: '8px', textAlign: 'center', flexShrink: 0 }}>
+              See who's clicking
             </h3>
             <p style={{ fontSize: '14px', color: '#64748b', textAlign: 'center', marginBottom: '24px', lineHeight: 1.5, flexShrink: 0 }}>
               Track every view with detailed analytics and real-time viewer info.
@@ -576,14 +576,14 @@ const HowItWorks: React.FC = () => {
                   {/* Stats */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', flexShrink: 0 }}>
                     <div>
-                      <p style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>
-                        Total Clicks
+                      <p style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700, marginBottom: '4px' }}>
+                        Total clicks
                       </p>
                       <p style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a', margin: 0 }}>1,245</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>
-                        Top Location
+                      <p style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700, marginBottom: '4px' }}>
+                        Top location
                       </p>
                       <p style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a', margin: 0 }}>United States</p>
                     </div>

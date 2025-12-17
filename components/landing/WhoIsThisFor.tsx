@@ -5,28 +5,28 @@ import { Rocket, Video, Users, Briefcase, GraduationCap, Megaphone } from 'lucid
 const audiences = [
   {
     icon: Rocket,
-    title: 'Founders & Startups',
+    title: 'Founders & startups',
     description: 'Track who\'s viewing your pitch deck. Know which investors are engaged before the meeting.',
     color: '#6366f1',
     bgColor: '#eef2ff'
   },
   {
     icon: Video,
-    title: 'Content Creators',
+    title: 'Content creators',
     description: 'See which links drive engagement. Understand your audience with real-time analytics.',
     color: '#ec4899',
     bgColor: '#fdf2f8'
   },
   {
     icon: Briefcase,
-    title: 'Sales Teams',
+    title: 'Sales teams',
     description: 'Know when prospects open proposals. Follow up at the perfect moment.',
     color: '#f97316',
     bgColor: '#fff7ed'
   },
   {
     icon: Megaphone,
-    title: 'Marketing & Agencies',
+    title: 'Marketing & agencies',
     description: 'Branded links for every campaign. Track performance across all channels.',
     color: '#8b5cf6',
     bgColor: '#f5f3ff'
@@ -40,7 +40,7 @@ const audiences = [
   },
   {
     icon: GraduationCap,
-    title: 'Educators & Coaches',
+    title: 'Educators & coaches',
     description: 'See who accessed course materials. Measure student engagement easily.',
     color: '#eab308',
     bgColor: '#fefce8'
@@ -85,7 +85,7 @@ const WhoIsThisFor: React.FC = () => {
             marginBottom: '16px',
             lineHeight: 1.1
           }}>
-            Who is LinkLens for?
+            Who is <span style={{ fontWeight: 800 }}><span style={{ color: '#1e293b' }}>Link</span><span style={{ color: '#7c8ce0' }}>Lens</span></span> for?
           </h2>
           <p style={{
             fontSize: '18px',
@@ -147,7 +147,7 @@ const WhoIsThisFor: React.FC = () => {
                 {/* Title */}
                 <h3 style={{
                   fontSize: '20px',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: '#0f172a',
                   marginBottom: '12px'
                 }}>

@@ -5,42 +5,42 @@ import { BarChart3, Globe, Clock, Shield, Zap, Mail } from 'lucide-react';
 const benefits = [
   {
     icon: Zap,
-    title: 'Generous Free Tier',
-    description: '10 free links with basic analytics. Perfect for getting started and testing the waters.',
+    title: 'Generous free tier',
+    description: '10 free links with 5,000 monthly views. Perfect for getting started and testing the waters.',
     highlight: 'Free forever',
     highlightColor: '#22c55e'
   },
   {
     icon: BarChart3,
-    title: 'Real-Time Analytics',
+    title: 'Real-time analytics',
     description: 'See who\'s clicking your links as it happens. Location, time, device—all in one dashboard.',
     highlight: 'Live tracking',
     highlightColor: '#f97316'
   },
   {
     icon: Globe,
-    title: 'Custom Domains',
+    title: 'Custom domains',
     description: 'Use your own domain for maximum brand recognition. links.yourbrand.com looks professional.',
     highlight: 'Starter & Pro',
     highlightColor: '#8b5cf6'
   },
   {
     icon: Clock,
-    title: '60-Second Setup',
+    title: '60-second setup',
     description: 'Upload, get your link, start sharing. No complicated onboarding or setup required.',
     highlight: 'Instant start',
     highlightColor: '#ec4899'
   },
   {
     icon: Mail,
-    title: 'Email Capture',
+    title: 'Email capture',
     description: 'Collect viewer emails before they access your content. Build your audience automatically.',
     highlight: 'All plans',
     highlightColor: '#6366f1'
   },
   {
     icon: Shield,
-    title: 'Privacy First',
+    title: 'Privacy first',
     description: 'We track clicks, not people. GDPR compliant and privacy-focused by design.',
     highlight: 'Secure',
     highlightColor: '#14b8a6'
@@ -73,17 +73,17 @@ const WhyLinkLens: React.FC = () => {
         <div style={{ textAlign: 'center', marginBottom: '64px' }}>
           <h2 style={{
             fontSize: '48px',
-            fontWeight: 800,
-            color: '#0f172a',
+            fontWeight: 700,
+            color: '#202124',
             marginBottom: '16px',
             lineHeight: 1.1
           }}>
             Why teams choose{' '}
-            <span style={{ color: '#6366f1' }}>LinkLens</span>
+            <span style={{ fontWeight: 800 }}><span style={{ color: '#1e293b' }}>Link</span><span style={{ color: '#7c8ce0' }}>Lens</span></span>
           </h2>
           <p style={{
             fontSize: '18px',
-            color: '#64748b',
+            color: '#5F6368',
             maxWidth: '600px',
             margin: '0 auto',
             lineHeight: 1.6
@@ -141,7 +141,6 @@ const WhyLinkLens: React.FC = () => {
                     backgroundColor: `${benefit.highlightColor}15`,
                     padding: '4px 10px',
                     borderRadius: '6px',
-                    textTransform: 'uppercase',
                     letterSpacing: '0.05em'
                   }}>
                     {benefit.highlight}
@@ -150,8 +149,8 @@ const WhyLinkLens: React.FC = () => {
 
                 {/* Title */}
                 <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: 700,
+                  fontSize: '20px',
+                  fontWeight: 600,
                   color: '#0f172a',
                   marginBottom: '8px'
                 }}>
@@ -161,7 +160,7 @@ const WhyLinkLens: React.FC = () => {
                 {/* Description */}
                 <p style={{
                   fontSize: '14px',
-                  color: '#64748b',
+                  color: '#5F6368',
                   lineHeight: 1.6,
                   margin: 0
                 }}>

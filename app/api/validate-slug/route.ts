@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isReservedSlug } from '@/lib/reserved-slugs';
 
 // Validate if a slug is available
 export async function POST(request: NextRequest) {
@@ -16,6 +17,14 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({
                 available: false,
                 error: 'Invalid format. Use lowercase letters, numbers, and hyphens only.'
+            }, { status: 200 });
+        }
+
+        // Check if slug is reserved
+        if (isReservedSlug(slug)) {
+            return NextResponse.json({
+                available: false,
+                error: 'This link name is reserved. Please choose another.'
             }, { status: 200 });
         }
 

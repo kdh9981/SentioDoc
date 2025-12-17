@@ -25,10 +25,10 @@ const Hero: React.FC = () => {
 
           <div style={{ display: 'flex', gap: '16px', marginBottom: '40px' }}>
             <Link
-              href="/auth/signin"
+              href="/auth/signup"
               style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '16px 32px', fontSize: '18px', fontWeight: 700, color: 'white', backgroundColor: '#0f172a', borderRadius: '9999px', textDecoration: 'none' }}
             >
-              Get Started Free
+              Get started free
               <ArrowRight style={{ marginLeft: '8px', width: '20px', height: '20px' }} />
             </Link>
             <a
@@ -36,7 +36,7 @@ const Hero: React.FC = () => {
               style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '16px 32px', fontSize: '18px', fontWeight: 700, color: '#0f172a', backgroundColor: 'white', border: '2px solid #cbd5e1', borderRadius: '9999px', textDecoration: 'none' }}
             >
               <PlayCircle style={{ marginRight: '8px', width: '20px', height: '20px' }} />
-              See How It Works
+              See how it works
             </a>
           </div>
 
